@@ -90,7 +90,8 @@ export default function PaintingView({ painting }: { painting: Painting }) {
               <span className="n">{s.step}</span>
               <span>
                 <i className="swatch" style={{ background: colorHex(palette, s.decision.color) }} />
-                {label('motif', s.decision.motif, layout, palette)} at the {label('region', s.decision.region, layout, palette)}, {s.decision.brush}, {s.layer}
+                {label('motif', s.decision.motif, layout, palette)} at the {label('region', s.decision.region, layout, palette)}, {s.decision.brush}
+                {label('region', s.decision.region, layout, palette) !== s.layer ? `, while painting the ${s.layer}` : ''}
               </span>
             </li>
           ))}
