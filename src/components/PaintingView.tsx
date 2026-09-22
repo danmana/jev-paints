@@ -8,7 +8,7 @@ import ShareButton from './ShareButton';
 import { colorHex, Judgment, label, Provenance } from './JevPanel';
 import { buildGesture } from '@/lib/gesture';
 import { PALETTE_BY_ID } from '@/lib/palettes';
-import type { Painting } from '@/lib/types';
+import { imageUrl, type Painting } from '@/lib/types';
 
 export default function PaintingView({ painting }: { painting: Painting }) {
   const canvas = useRef<CanvasHandle>(null);
@@ -45,7 +45,7 @@ export default function PaintingView({ painting }: { painting: Painting }) {
           <PaintingCanvas ref={canvas} className="canvas" />
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="canvas" src={`/api/paintings/${painting.id}/image`} alt={painting.prompt} width={600} height={600} />
+          <img className="canvas" src={imageUrl(painting)} alt={painting.prompt} width={600} height={600} />
         )}
         <figcaption className="caption">
           <p className="work">{painting.prompt}</p>

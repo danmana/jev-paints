@@ -16,11 +16,13 @@ The prompts describe state only; nothing tells Jev how to paint. Every option Je
 
 ```bash
 npm install
-export TYPESAFE_AI_API_KEY=...   # server-side only
+cp .env.example .env.local        # add your TypeSafe key
 npm run dev                       # http://localhost:3000
 ```
 
-Paintings are saved locally under `data/paintings/` (JSON of every decision plus a PNG) until a database and blob storage are wired in.
+Paintings are one JSON (every decision Jev made) plus one PNG. With `BLOB_READ_WRITE_TOKEN` set they live in Vercel Blob, with a small `paintings/index.json` for the gallery; without it they are written to `data/paintings/` on disk. `scripts/migrate-to-blob.ts` uploads a local folder into the store.
+
+Deployed on Vercel: the app is stateless apart from Blob, so a fresh clone with the two env vars is the whole setup.
 
 ## Layout
 

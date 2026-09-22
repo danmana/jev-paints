@@ -11,6 +11,6 @@ export async function POST(request: Request) {
   const png = body.png.replace(/^data:image\/png;base64,/, '');
   if (png.length > 12_000_000) return Response.json({ error: 'image too large' }, { status: 413 });
   const painting: Painting = { ...body.painting, id: newId(), createdAt: new Date().toISOString(), likes: 0 };
-  await savePainting(painting, png);
-  return Response.json({ id: painting.id });
+  const stored = await savePainting(painting, png);
+  return Response.json({ id: stored.id, image: stored.image ?? null });
 }

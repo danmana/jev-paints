@@ -116,6 +116,8 @@ export interface Painting {
   totalMs: number;
   totalTokens: number;
   parentId?: string;
+  /** Where the PNG lives. Absent for paintings stored on the local disk. */
+  image?: string;
 }
 
 export interface PaintingSummary {
@@ -127,6 +129,12 @@ export interface PaintingSummary {
   layout: string;
   steps: number;
   likes: number;
+  image?: string;
+}
+
+/** The URL a page should use for a painting's PNG. */
+export function imageUrl(p: { id: string; image?: string }): string {
+  return p.image ?? `/api/paintings/${p.id}/image`;
 }
 
 /** What one step sends to the server. The server builds the Jev state from it. */
