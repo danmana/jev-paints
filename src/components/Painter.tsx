@@ -147,11 +147,11 @@ export default function Painter() {
       case 'setup':
         return 'Jev is choosing a palette, a style and a composition.';
       case 'painting':
-        return `Gesture ${current} of ${steps}, painting the ${layer}. ${elapsed} seconds so far.`;
+        return `Gesture ${current} of ${steps}, painting the ${layer}. ${elapsed.toFixed(1)} seconds so far.`;
       case 'saving':
         return 'Saving to the gallery.';
       case 'done':
-        return `Finished in ${elapsed} seconds with ${records.length} gestures, about $${cost.toFixed(3)} of Jev.`;
+        return `Finished in ${elapsed.toFixed(1)} seconds with ${records.length} gestures, about $${cost.toFixed(3)} of Jev.`;
       case 'blocked':
         return 'Jev would rather not paint that one. Try a different subject.';
       case 'error':

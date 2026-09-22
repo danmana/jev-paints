@@ -313,6 +313,7 @@ a {
   font-size: 14px;
   color: var(--ink-2);
   min-height: 1.5em;
+  font-variant-numeric: tabular-nums;
 }
 .progress {
   width: 240px;
