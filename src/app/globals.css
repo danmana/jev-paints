@@ -331,6 +331,42 @@ a {
   transition: width 0.3s ease;
 }
 
+/* A quiet hint that Jev's judgment sits below the fold */
+.more {
+  display: block;
+  margin-top: 6px;
+  padding: 6px 12px;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  cursor: pointer;
+  line-height: 0;
+  animation: more-drift 2.4s ease-in-out infinite;
+}
+.more:hover {
+  color: var(--violet);
+}
+@keyframes more-drift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .more {
+    animation: none;
+  }
+}
+.judgment-anchor {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  scroll-margin-top: 24px;
+}
+
 /* Jev's judgment: a quiet block, no box */
 .judgment {
   width: 100%;

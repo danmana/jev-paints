@@ -25,6 +25,7 @@ export default function Painter() {
   const canvas = useRef<CanvasHandle>(null);
   const input = useRef<HTMLInputElement>(null);
   const easel = useRef<HTMLElement>(null);
+  const judgment = useRef<HTMLDivElement>(null);
   const stopRef = useRef(false);
   const [prompt, setPrompt] = useState('');
   const [steps, setSteps] = useState(50);
@@ -226,10 +227,26 @@ export default function Painter() {
               </button>
             </div>
           )}
+          {latest && setup && (
+            <button
+              type="button"
+              className="more"
+              aria-label="Scroll down to Jev's latest judgment"
+              onClick={() => judgment.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })}
+            >
+              <svg width="18" height="10" viewBox="0 0 18 10" aria-hidden="true">
+                <path d="M1 1l8 7 8-7" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
         </figcaption>
       </figure>
 
-      {latest && setup && <Judgment record={latest} layoutId={setup.layout} paletteId={setup.palette} total={steps} />}
+      {latest && setup && (
+        <div ref={judgment} className="judgment-anchor">
+          <Judgment record={latest} layoutId={setup.layout} paletteId={setup.palette} total={steps} />
+        </div>
+      )}
     </div>
   );
 }
