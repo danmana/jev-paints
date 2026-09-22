@@ -205,7 +205,8 @@ const PaintingCanvas = forwardRef<CanvasHandle, Props>(function PaintingCanvas({
     },
   }));
 
-  return <div ref={host} className={className} style={{ width: CANVAS_SIZE, height: CANVAS_SIZE, maxWidth: '100%', aspectRatio: '1 / 1' }} />;
+  // No fixed height: the CSS aspect ratio keeps it square at any width, phones included.
+  return <div ref={host} className={className} style={{ width: '100%', maxWidth: CANVAS_SIZE, aspectRatio: '1 / 1' }} />;
 });
 
 export default PaintingCanvas;

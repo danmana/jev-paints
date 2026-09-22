@@ -47,7 +47,7 @@ export default function PaintingView({ painting }: { painting: Painting }) {
           <PaintingCanvas ref={canvas} className="canvas" />
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="canvas" src={imageUrl(painting)} alt={painting.prompt} width={600} height={600} />
+          <img className="canvas" src={imageUrl(painting)} alt={painting.prompt} />
         )}
         <figcaption className="caption">
           <p className="work">{painting.prompt}</p>

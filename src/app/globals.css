@@ -16,6 +16,11 @@
   box-sizing: border-box;
 }
 
+html {
+  /* Scroll anchoring fought the scroll to the canvas while the status line re-rendered above it. */
+  overflow-anchor: none;
+}
+
 html,
 body {
   margin: 0;
@@ -288,6 +293,10 @@ a {
   gap: 26px;
   width: 100%;
   scroll-margin-top: 20px;
+}
+/* While a painting runs the page must be tall enough for the easel to reach the top of the viewport. */
+.easel.busy {
+  min-height: calc(100dvh - 20px);
 }
 /* Canvas plus caption always fit one viewport once the easel is scrolled to the top. */
 .canvas {
@@ -684,13 +693,37 @@ a {
 
 @media (max-width: 720px) {
   .top {
-    padding: 20px 20px 0;
+    padding: 20px 16px 0;
     flex-direction: column;
     gap: 10px;
     align-items: center;
   }
+  .top nav {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 18px;
+  }
+  .top nav a {
+    white-space: nowrap;
+    font-size: 13px;
+  }
   .page {
-    padding: 40px 16px 80px;
+    padding: 36px 16px 80px;
+  }
+  .question {
+    font-size: 34px;
+  }
+  .prompt-line input {
+    font-size: 22px;
+  }
+  .caption .work {
+    font-size: 24px;
+  }
+  .caption .provenance {
+    font-size: 17px;
+  }
+  .dists {
+    grid-template-columns: 1fr;
   }
 }
 

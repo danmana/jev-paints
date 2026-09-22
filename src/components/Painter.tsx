@@ -24,6 +24,32 @@ async function post<T>(url: string, body: unknown): Promise<T> {
   return data as T;
 }
 
+/**
+ * Scrolls the easel to the top of the viewport with a short animation driven by requestAnimationFrame.
+ * Native smooth scrolling gets cancelled by scroll anchoring when the form above re-renders (the
+ * Paint button becomes Stop, the status line appears), which left phones stuck near the top.
+ * Re-targeting every frame also absorbs the keyboard closing.
+ */
+function scrollToEasel(el: HTMLElement | null) {
+  if (!el) return;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const target = () => window.scrollY + el.getBoundingClientRect().top - 20;
+  if (reduced) {
+    window.scrollTo(0, target());
+    return;
+  }
+  const from = window.scrollY;
+  const started = performance.now();
+  const duration = 450;
+  const tick = (now: number) => {
+    const t = Math.min(1, (now - started) / duration);
+    const eased = 1 - (1 - t) ** 3;
+    window.scrollTo(0, from + (target() - from) * eased);
+    if (t < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
 export default function Painter() {
   const canvas = useRef<CanvasHandle>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -66,8 +92,8 @@ export default function Painter() {
     startedAt.current = performance.now();
     setPhase('setup');
     // The question and controls are not needed while it paints: bring the canvas and its caption into view.
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    easel.current?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+    input.current?.blur();
+    setTimeout(() => scrollToEasel(easel.current), 300);
     let totalTokens = 0;
     try {
       const s = await post<SetupResponse>('/api/setup', { prompt: text, policy, steps });
@@ -211,7 +237,7 @@ export default function Painter() {
         </div>
       </section>
 
-      <figure className="easel" ref={easel}>
+      <figure className={`easel ${busy ? 'busy' : ''}`} ref={easel}>
         <PaintingCanvas ref={canvas} className="canvas" />
         <figcaption className="caption">
           <p className="work">{painted ? painted : <span className="quiet">Untitled, not yet begun</span>}</p>
