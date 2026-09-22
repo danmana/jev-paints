@@ -588,3 +588,345 @@ a {
     transition: none !important;
   }
 }
+
+/* How it works: a long read with the example painting replayed live */
+.how-page {
+  max-width: 820px;
+}
+.how .title {
+  text-align: left;
+  margin-bottom: 20px;
+}
+.how .lede {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 22px;
+  line-height: 1.5;
+  margin: 0 0 12px;
+  max-width: 680px;
+}
+.how-section {
+  margin-top: 88px;
+}
+.how-section h2 {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 34px;
+  font-weight: 400;
+  line-height: 1.15;
+  margin: 0 0 16px;
+}
+.how-section h3 {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 24px;
+  font-weight: 400;
+  margin: 40px 0 8px;
+}
+.how-section p {
+  max-width: 680px;
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0 0 18px;
+}
+.how-section p.how-note {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.how-section p.how-note em {
+  color: var(--ink);
+}
+.how-section .easel {
+  margin: 12px 0 24px;
+}
+.how-section .decision {
+  font-size: 22px;
+  max-width: 760px;
+}
+.linkish {
+  font: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--violet);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.how pre {
+  font-family: var(--font-sans), monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 12px 14px;
+  border-radius: 6px;
+  overflow: auto;
+  margin: 0 0 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.how pre.raw {
+  max-height: 420px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+
+.request {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px 40px;
+  margin: 8px 0 20px;
+}
+.request .dists {
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+@media (max-width: 720px) {
+  .request {
+    grid-template-columns: 1fr;
+  }
+}
+
+.plan {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+  margin: 8px 0 20px;
+}
+@media (max-width: 720px) {
+  .plan {
+    grid-template-columns: 1fr;
+  }
+}
+.layout-diagram {
+  display: block;
+  box-shadow: 0 10px 30px -14px rgba(111, 95, 163, 0.35);
+}
+.regions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.regions strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.phases {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+}
+.phase {
+  min-width: 0;
+  padding: 10px 10px 8px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+.phase-name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.phase-steps {
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.anatomy {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 24px 40px;
+  margin: 8px 0 24px;
+}
+@media (max-width: 720px) {
+  .anatomy {
+    grid-template-columns: 1fr;
+  }
+}
+dl.state {
+  margin: 0 0 12px;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 14px;
+  font-size: 14px;
+}
+dl.state dt {
+  color: var(--ink-2);
+}
+dl.state dd {
+  margin: 0;
+}
+.questions {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.seeing {
+  margin: 8px 0 0;
+}
+.seeing-canvas {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  aspect-ratio: 1 / 1;
+  box-shadow:
+    0 30px 80px -20px rgba(111, 95, 163, 0.28),
+    0 10px 30px -10px rgba(60, 58, 70, 0.18);
+  background: #fff;
+}
+.seeing-canvas img,
+.seeing-placeholder {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.seeing-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.grid-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+}
+.grid-cell {
+  border: 1px solid rgba(59, 58, 70, 0.35);
+  padding: 5px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.3);
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.9), 0 0 2px rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+}
+.grid-id {
+  font-weight: 500;
+  color: var(--ink-2);
+  font-size: 10px;
+}
+.seeing figcaption {
+  margin-top: 12px;
+}
+
+.resolve {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 24px;
+  margin: 8px 0 24px;
+}
+.resolve figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ops-diagram,
+.resolve .after {
+  display: block;
+  width: 180px;
+  height: 180px;
+  box-shadow: 0 10px 30px -14px rgba(111, 95, 163, 0.35);
+}
+.resolve .placeholder,
+.filmstrip .placeholder {
+  background: rgba(255, 255, 255, 0.6);
+}
+.resolve .after.placeholder {
+  width: 180px;
+  height: 180px;
+}
+
+.brush-table dl {
+  margin: 0 0 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 6px 24px;
+  font-size: 14px;
+}
+.brush-table dl > div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 8px;
+}
+.brush-table dt {
+  font-weight: 500;
+}
+.brush-table dd {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.filmstrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 18px;
+}
+.filmstrip figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.filmstrip img,
+.filmstrip .placeholder {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  height: auto;
+  box-shadow: 0 14px 34px -16px rgba(111, 95, 163, 0.35);
+}
+
+.motif-grid,
+.layout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 18px 12px;
+  margin-bottom: 12px;
+}
+.motif-grid figure,
+.layout-grid figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.motif-thumb {
+  background: #fff;
+  box-shadow: 0 8px 24px -14px rgba(111, 95, 163, 0.35);
+}
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px 20px;
+}
+.palette-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.palette-row .swatches {
+  margin: 0;
+}
+.style-list {
+  color: var(--ink-2);
+}

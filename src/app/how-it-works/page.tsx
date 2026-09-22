@@ -1,13 +1,21 @@
-export default function HowItWorksPage() {
+import HowItWorks from '@/components/HowItWorks';
+import { listPaintings, loadPainting } from '@/lib/store';
+
+export const dynamic = 'force-dynamic';
+
+/** The worked example. Falls back to the newest painting with at least 30 gestures when it is gone. */
+const EXAMPLE_ID = '20260922152557-i18ii';
+
+export default async function HowItWorksPage() {
+  const all = await listPaintings();
+  let painting = await loadPainting(EXAMPLE_ID).catch(() => null);
+  if (!painting) {
+    const candidate = all.find((p) => p.steps >= 30) ?? all[0];
+    painting = candidate ? await loadPainting(candidate.id).catch(() => null) : null;
+  }
   return (
-    <main className="page narrow">
-      <h1 className="title">How it works</h1>
-      <p className="prose muted">
-        This page is still being written. In short: Jev never sees a pixel. It reads a description of the canvas and picks a gesture, a place, a medium and a colour from fixed lists. Code turns each pick into brush strokes.
-      </p>
-      <p className="prose muted">
-        Jev answers every question with a probability for each option, not a single answer. <strong>Top pick</strong> always takes the option with the highest probability. <strong>Weighted pick</strong> draws one option at random with those probabilities as weights, so an option Jev gave 30% is chosen about three times in ten. Top pick is steadier and more repetitive; weighted pick is livelier and shows more of what Jev considered.
-      </p>
+    <main className="page how-page">
+      <HowItWorks painting={painting} counts={{ paintings: all.length }} />
     </main>
   );
 }
