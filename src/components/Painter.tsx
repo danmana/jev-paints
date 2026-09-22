@@ -26,7 +26,7 @@ export default function Painter() {
   const input = useRef<HTMLInputElement>(null);
   const stopRef = useRef(false);
   const [prompt, setPrompt] = useState('');
-  const [steps, setSteps] = useState(30);
+  const [steps, setSteps] = useState(50);
   const [policy, setPolicy] = useState<Policy>('sample');
   const [animMs, setAnimMs] = useState(250);
   const [phase, setPhase] = useState<Phase>('idle');
