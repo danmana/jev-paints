@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRef, useState } from 'react';
 import PaintingCanvas, { type CanvasHandle } from './PaintingCanvas';
+import LikeButton from './LikeButton';
 import { colorHex, Judgment, label, Provenance } from './JevPanel';
 import { buildGesture } from '@/lib/gesture';
 import { PALETTE_BY_ID } from '@/lib/palettes';
@@ -13,8 +14,6 @@ export default function PaintingView({ painting }: { painting: Painting }) {
   const [replaying, setReplaying] = useState(false);
   const [showCanvas, setShowCanvas] = useState(false);
   const [step, setStep] = useState(0);
-  const [likes, setLikes] = useState(painting.likes ?? 0);
-  const [liked, setLiked] = useState(false);
   const [openStep, setOpenStep] = useState<number | null>(null);
 
   const replay = async () => {
@@ -32,19 +31,6 @@ export default function PaintingView({ painting }: { painting: Painting }) {
       await c.paint(g, 250);
     }
     setReplaying(false);
-  };
-
-  const like = async () => {
-    if (liked) return;
-    setLiked(true);
-    setLikes((n) => n + 1);
-    try {
-      const res = await fetch(`/api/paintings/${painting.id}/like`, { method: 'POST' });
-      const data = (await res.json()) as { likes?: number };
-      if (typeof data.likes === 'number') setLikes(data.likes);
-    } catch {
-      // the optimistic count stands
-    }
   };
 
   const cost = ((painting.totalTokens ?? 0) * 0.042) / 1_000_000;
@@ -69,9 +55,7 @@ export default function PaintingView({ painting }: { painting: Painting }) {
               : `${painting.steps.length} gestures in ${((painting.totalMs ?? 0) / 1000).toFixed(1)} seconds, about $${cost.toFixed(3)} of Jev. Painted ${when} with ${painting.settings.policy === 'sample' ? 'weighted picks' : 'top picks'}.`}
           </div>
           <div className="actions">
-            <button className={`button ${liked ? 'liked' : ''}`} onClick={like} disabled={liked} aria-label="Like this painting">
-              ♥ {likes}
-            </button>
+            <LikeButton id={painting.id} likes={painting.likes ?? 0} variant="button" />
             <button className="button" onClick={replay} disabled={replaying}>
               Watch it again
             </button>

@@ -71,10 +71,10 @@ export async function listPaintings(): Promise<PaintingSummary[]> {
   return out;
 }
 
-export async function likePainting(id: string): Promise<number> {
+export async function likePainting(id: string, delta: 1 | -1 = 1): Promise<number> {
   const p = await loadPainting(id);
   if (!p) throw Object.assign(new Error('not found'), { status: 404 });
-  p.likes = (p.likes ?? 0) + 1;
+  p.likes = Math.max(0, (p.likes ?? 0) + delta);
   await writeFile(path.join(DIR, `${p.id}.json`), JSON.stringify(p, null, 2));
   return p.likes;
 }
