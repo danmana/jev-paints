@@ -1,19 +1,22 @@
 import 'server-only';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { del, head, list, put } from '@vercel/blob';
+import { del, get, put } from '@vercel/blob';
+import { db, hasDb, type PaintingRow } from './db.server';
 import { encodeImages, type EncodedImages } from './images.server';
 import type { Painting, PaintingSummary } from './types';
 
 /**
- * Two backends behind one interface. With BLOB_READ_WRITE_TOKEN set (Vercel), every painting is
- * one JSON and one public PNG in Vercel Blob plus a small index for the gallery. Without it
- * (local dev), the same files live under data/paintings/.
+ * Production: the decisions JSON and the two WebP images are written once to Vercel Blob, and one
+ * row per painting in Supabase Postgres carries the gallery index and the like count. Blob is
+ * never overwritten, so its CDN cache is harmless; the only mutable state is in Postgres.
+ *
+ * Local dev without the Blob token and Supabase keys: everything under data/paintings/.
  */
-const useBlob = !!process.env.BLOB_READ_WRITE_TOKEN;
+const useCloud = !!process.env.BLOB_READ_WRITE_TOKEN && hasDb();
 const DIR = path.join(process.cwd(), 'data', 'paintings');
 const PREFIX = 'paintings/';
-const INDEX = `${PREFIX}index.json`;
+const TABLE = 'paintings';
 
 function safeId(id: string) {
   if (!/^[a-zA-Z0-9_-]{4,64}$/.test(id)) throw Object.assign(new Error('bad id'), { status: 400 });
@@ -41,40 +44,27 @@ export function summarize(p: Painting): PaintingSummary {
   };
 }
 
+function rowToSummary(r: PaintingRow): PaintingSummary {
+  return { id: r.id, createdAt: r.created_at, prompt: r.prompt, palette: r.palette, style: r.style, layout: r.layout, steps: r.steps, likes: r.likes, image: r.image, thumb: r.thumb };
+}
+
 // ---------------------------------------------------------------------------------------------
-// Vercel Blob
+// Blob: immutable files
 // ---------------------------------------------------------------------------------------------
 
+const JSON_OPTS = { access: 'public' as const, addRandomSuffix: false, allowOverwrite: false, contentType: 'application/json', cacheControlMaxAge: 31536000 };
+const IMAGE_OPTS = { access: 'public' as const, addRandomSuffix: false, allowOverwrite: false, contentType: 'image/webp', cacheControlMaxAge: 31536000 };
+
 async function blobJson<T>(pathname: string): Promise<T | null> {
-  let url: string;
+  let result;
   try {
-    url = (await head(pathname)).url;
+    result = await get(pathname, { access: 'public' });
   } catch {
     return null;
   }
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) return null;
-  return (await res.json()) as T;
+  if (!result || result.statusCode !== 200) return null;
+  return JSON.parse(await new Response(result.stream).text()) as T;
 }
-
-async function putJson(pathname: string, value: unknown) {
-  await put(pathname, JSON.stringify(value), { access: 'public', addRandomSuffix: false, allowOverwrite: true, contentType: 'application/json', cacheControlMaxAge: 60 });
-}
-
-async function readIndex(): Promise<PaintingSummary[]> {
-  return (await blobJson<PaintingSummary[]>(INDEX)) ?? [];
-}
-
-/** Puts one summary at the front of the index, or replaces it in place. */
-async function upsertIndex(summary: PaintingSummary) {
-  const index = await readIndex();
-  const i = index.findIndex((x) => x.id === summary.id);
-  if (i >= 0) index[i] = summary;
-  else index.unshift(summary);
-  await putJson(INDEX, index);
-}
-
-const IMAGE_OPTS = { access: 'public' as const, addRandomSuffix: false, allowOverwrite: true, contentType: 'image/webp', cacheControlMaxAge: 31536000 };
 
 export async function uploadImages(id: string, images: EncodedImages): Promise<{ image: string; thumb: string }> {
   const [full, thumb] = await Promise.all([put(`${PREFIX}${id}.webp`, images.full, IMAGE_OPTS), put(`${PREFIX}${id}-thumb.webp`, images.thumb, IMAGE_OPTS)]);
@@ -85,14 +75,28 @@ export async function uploadImages(id: string, images: EncodedImages): Promise<{
 // Public interface
 // ---------------------------------------------------------------------------------------------
 
-export async function savePainting(painting: Painting, png: Buffer): Promise<Painting> {
+export async function savePainting(painting: Painting, imageBytes: Buffer): Promise<Painting> {
   safeId(painting.id);
-  const images = await encodeImages(png);
-  if (useBlob) {
+  const images = await encodeImages(imageBytes);
+  if (useCloud) {
     const urls = await uploadImages(painting.id, images);
-    const stored: Painting = { ...painting, ...urls };
-    await putJson(`${PREFIX}${painting.id}.json`, stored);
-    await upsertIndex(summarize(stored));
+    const stored: Painting = { ...painting, ...urls, likes: 0 };
+    const json = await put(`${PREFIX}${painting.id}.json`, JSON.stringify(stored), JSON_OPTS);
+    const row: PaintingRow = {
+      id: stored.id,
+      created_at: stored.createdAt,
+      prompt: stored.prompt,
+      palette: stored.setup.palette,
+      style: stored.setup.style,
+      layout: stored.setup.layout,
+      steps: stored.steps.length,
+      likes: 0,
+      image: urls.image,
+      thumb: urls.thumb,
+      json_url: json.url,
+    };
+    const { error } = await db().from(TABLE).insert(row);
+    if (error) throw new Error(`db insert failed: ${error.message}`);
     return stored;
   }
   await mkdir(DIR, { recursive: true });
@@ -102,9 +106,14 @@ export async function savePainting(painting: Painting, png: Buffer): Promise<Pai
   return painting;
 }
 
+/** The full painting: decisions from the Blob JSON, the live like count from the row. */
 export async function loadPainting(id: string): Promise<Painting | null> {
   safeId(id);
-  if (useBlob) return blobJson<Painting>(`${PREFIX}${id}.json`);
+  if (useCloud) {
+    const [{ data: row }, json] = await Promise.all([db().from(TABLE).select('*').eq('id', id).maybeSingle<PaintingRow>(), blobJson<Painting>(`${PREFIX}${id}.json`)]);
+    if (!row || !json) return null;
+    return { ...json, likes: row.likes, image: row.image, thumb: row.thumb };
+  }
   try {
     return JSON.parse(await readFile(path.join(DIR, `${id}.json`), 'utf8')) as Painting;
   } catch (err) {
@@ -116,9 +125,9 @@ export async function loadPainting(id: string): Promise<Painting | null> {
 /** Local image bytes with their type, or the public URL when the painting lives in Blob. */
 export async function loadImage(id: string): Promise<{ bytes?: Buffer; contentType?: string; url?: string } | null> {
   safeId(id);
-  if (useBlob) {
-    const p = await loadPainting(id);
-    return p?.image ? { url: p.image } : null;
+  if (useCloud) {
+    const { data: row } = await db().from(TABLE).select('image').eq('id', id).maybeSingle<Pick<PaintingRow, 'image'>>();
+    return row?.image ? { url: row.image } : null;
   }
   for (const [ext, contentType] of [
     ['webp', 'image/webp'],
@@ -134,7 +143,11 @@ export async function loadImage(id: string): Promise<{ bytes?: Buffer; contentTy
 }
 
 export async function listPaintings(): Promise<PaintingSummary[]> {
-  if (useBlob) return readIndex();
+  if (useCloud) {
+    const { data, error } = await db().from(TABLE).select('*').order('created_at', { ascending: false }).limit(500).returns<PaintingRow[]>();
+    if (error) throw new Error(`db select failed: ${error.message}`);
+    return data.map(rowToSummary);
+  }
   await mkdir(DIR, { recursive: true });
   const files = (await readdir(DIR)).filter((f) => f.endsWith('.json')).sort().reverse();
   const out: PaintingSummary[] = [];
@@ -148,36 +161,20 @@ export async function listPaintings(): Promise<PaintingSummary[]> {
   return out;
 }
 
+/** Atomic in Postgres; the local fallback just rewrites the file. */
 export async function likePainting(id: string, delta: 1 | -1 = 1): Promise<number> {
+  safeId(id);
+  if (useCloud) {
+    const { data, error } = await db().rpc('bump_likes', { p_id: id, p_delta: delta });
+    if (error) throw new Error(`like failed: ${error.message}`);
+    if (data === null || data === undefined) throw Object.assign(new Error('not found'), { status: 404 });
+    return data as number;
+  }
   const p = await loadPainting(id);
   if (!p) throw Object.assign(new Error('not found'), { status: 404 });
   p.likes = Math.max(0, (p.likes ?? 0) + delta);
-  if (useBlob) {
-    await putJson(`${PREFIX}${p.id}.json`, p);
-    await upsertIndex(summarize(p));
-  } else {
-    await writeFile(path.join(DIR, `${p.id}.json`), JSON.stringify(p, null, 2));
-  }
+  await writeFile(path.join(DIR, `${p.id}.json`), JSON.stringify(p, null, 2));
   return p.likes;
-}
-
-/** Rebuilds the gallery index from every painting JSON in the store. Used by the migration. */
-export async function rebuildIndex(): Promise<number> {
-  if (!useBlob) throw new Error('rebuildIndex needs BLOB_READ_WRITE_TOKEN');
-  const summaries: PaintingSummary[] = [];
-  let cursor: string | undefined;
-  do {
-    const page = await list({ prefix: PREFIX, cursor, limit: 1000 });
-    for (const b of page.blobs) {
-      if (!b.pathname.endsWith('.json') || b.pathname === INDEX) continue;
-      const res = await fetch(b.url, { cache: 'no-store' });
-      if (res.ok) summaries.push(summarize((await res.json()) as Painting));
-    }
-    cursor = page.hasMore ? page.cursor : undefined;
-  } while (cursor);
-  summaries.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-  await putJson(INDEX, summaries);
-  return summaries.length;
 }
 
 export { del as deleteBlob };
