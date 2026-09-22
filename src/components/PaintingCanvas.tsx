@@ -133,7 +133,7 @@ const PaintingCanvas = forwardRef<CanvasHandle, Props>(function PaintingCanvas({
     if (fillOn) {
       brush.fill(s.color, s.fillOpacity);
       brush.fillBleed(s.bleed, 'out');
-      brush.fillTexture(0.55, 0.45, true);
+      brush.fillTexture(0.7, 0.6, true);
     } else brush.noFill();
     if (washOn) brush.wash(s.color, s.fillOpacity);
     else brush.noWash();

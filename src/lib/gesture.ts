@@ -7,8 +7,9 @@ import { makeRng } from './rng';
 import type { FieldId, Gesture, ModifierId, StepDecision } from './types';
 import { CANVAS_SIZE } from './types';
 
-const FILL_OPACITY: Record<ModifierId, number> = { stroke: 0, fill: 190, fill_and_stroke: 175, bleed: 150, wash: 100, hatch: 0 };
-const BLEED: Record<ModifierId, number> = { stroke: 0, fill: 0.08, fill_and_stroke: 0.08, bleed: 0.55, wash: 0.15, hatch: 0 };
+/** Every fill looks like paint, not a vector rectangle: even the plain fill bleeds a little. */
+const FILL_OPACITY: Record<ModifierId, number> = { stroke: 0, fill: 200, fill_and_stroke: 185, bleed: 160, wash: 95, hatch: 0 };
+const BLEED: Record<ModifierId, number> = { stroke: 0, fill: 0.22, fill_and_stroke: 0.22, bleed: 0.65, wash: 0.3, hatch: 0 };
 
 /**
  * Turns Jev's seven picks into concrete geometry. The rng is seeded from the painting seed and the

@@ -1,4 +1,4 @@
-import type { Palette } from './types';
+import type { ColorDef, Palette } from './types';
 
 /** Colour ids are the lowercase name with spaces replaced by underscores; Jev sees the names only. */
 function p(id: string, name: string, mood: string, paper: [string, string], colors: Array<[string, string]>): Palette {
@@ -78,10 +78,42 @@ export const PALETTES: Palette[] = [
 
 export const PALETTE_BY_ID: Record<string, Palette> = Object.fromEntries(PALETTES.map((x) => [x.id, x]));
 
+/** CIE lightness 0..100 of a hex colour, so light and dark can be stated as fact. */
+export function lightness(hex: string): number {
+  const h = hex.replace('#', '');
+  const lin = (v: number) => {
+    const c = v / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  const r = lin(parseInt(h.slice(0, 2), 16));
+  const g = lin(parseInt(h.slice(2, 4), 16));
+  const b = lin(parseInt(h.slice(4, 6), 16));
+  const y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return y <= 0.008856 ? 903.3 * y : 116 * Math.cbrt(y) - 16;
+}
+
+export function valueWord(hex: string): string {
+  const l = lightness(hex);
+  if (l < 25) return 'very dark';
+  if (l < 45) return 'dark';
+  if (l < 65) return 'mid-tone';
+  if (l < 85) return 'light';
+  return 'very light';
+}
+
+/** "deep navy (very dark)": the name Jev knows plus how light it is. */
+export function describeColor(c: ColorDef): string {
+  return `${c.name} (${valueWord(c.hex)})`;
+}
+
+export function describePaper(p: Palette): string {
+  return `${p.paperName} (${valueWord(p.paper)})`;
+}
+
 export function paletteChoiceCriteria(): Record<string, string> {
   const out: Record<string, string> = {};
   for (const pal of PALETTES) {
-    out[pal.id] = `${pal.name}: ${pal.mood}. Colours: ${pal.colors.map((c) => c.name).join(', ')}; on ${pal.paperName} paper.`;
+    out[pal.id] = `${pal.name}: ${pal.mood}. Colours: ${pal.colors.map(describeColor).join(', ')}; on ${describePaper(pal)} paper.`;
   }
   return out;
 }

@@ -1,3 +1,4 @@
+import { lightness } from './palettes';
 import { COLS, GRID } from './plan';
 import type { Palette } from './types';
 
@@ -6,8 +7,13 @@ function hexToRgb(hex: string): [number, number, number] {
   return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
 }
 
-/** How different a sampled pixel must be from the paper before it counts as painted. */
-const PAINT_THRESHOLD = 40;
+/**
+ * How different a sampled pixel must be from the paper before it counts as painted. Dark papers
+ * get a lower bar, so dark marks on them are still reported instead of reading as blank.
+ */
+function paintThreshold(paperHex: string): number {
+  return lightness(paperHex) < 30 ? 22 : 40;
+}
 
 export interface CellStats {
   coverage: number;
@@ -20,6 +26,7 @@ export interface CellStats {
  */
 export function computeGrid(pixels: ArrayLike<number>, width: number, height: number, palette: Palette): Record<string, CellStats> {
   const paper = hexToRgb(palette.paper);
+  const threshold = paintThreshold(palette.paper);
   const swatches = palette.colors.map((c) => ({ id: c.id, name: c.name, rgb: hexToRgb(c.hex) }));
   const cellW = width / GRID;
   const cellH = height / GRID;
@@ -43,7 +50,7 @@ export function computeGrid(pixels: ArrayLike<number>, width: number, height: nu
           const b = pixels[i + 2];
           sampled++;
           const dPaper = Math.hypot(r - paper[0], g - paper[1], b - paper[2]);
-          if (dPaper < PAINT_THRESHOLD) continue;
+          if (dPaper < threshold) continue;
           painted++;
           let best = swatches[0];
           let bestD = Infinity;

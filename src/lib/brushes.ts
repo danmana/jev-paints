@@ -15,13 +15,14 @@ export const BRUSHES: Record<string, string> = {
   charcoal: 'charcoal stick, smudgy black mark',
 };
 
+/** How a solid shape is painted. Line gestures ignore this: they are always plain strokes. */
 export const MODIFIERS: Record<ModifierId, string> = {
-  stroke: 'outline or line only, no filling',
-  fill: 'filled solidly with paint, no outline',
-  bleed: 'filled with a watercolour wash that bleeds and feathers at the edges',
-  wash: 'a light transparent wash of colour, the paper shows through',
-  hatch: 'the shape is filled with parallel hatching lines',
-  fill_and_stroke: 'filled with paint and outlined',
+  fill: 'filled solidly with opaque paint, soft uneven edges, no outline',
+  bleed: 'filled with a wet watercolour wash that bleeds and feathers well past its edges',
+  wash: 'a thin transparent wash of colour; the paper and earlier paint show through',
+  fill_and_stroke: 'filled with paint and outlined in the chosen medium',
+  hatch: 'not filled; the shape is covered in parallel hatching lines of the chosen medium',
+  stroke: 'outline only in the chosen medium, hollow inside',
 };
 
 export const SIZES: Record<SizeId, string> = {

@@ -1,4 +1,4 @@
-import type { MotifDef, Op } from './types';
+import type { MotifDef, MotifKind, Op } from './types';
 import type { Rng } from './rng';
 
 /** Pixel box the gesture must land in. */
@@ -74,7 +74,7 @@ const MOTIF_LIST: Motif[] = [
   {
     id: 'band',
     name: 'horizontal band',
-    description: 'a wide horizontal band of colour across the region',
+    description: 'a wide solid horizontal band of colour across the place, like a horizon, a sea, a road or a stripe',
     kind: 'shape',
     gen: (c) => {
       const h = Math.max(14, c.box.h * c.rng.range(0.3, 0.6));
@@ -94,7 +94,7 @@ const MOTIF_LIST: Motif[] = [
   {
     id: 'column',
     name: 'vertical column',
-    description: 'a tall vertical column of colour in the region',
+    description: 'a tall solid vertical column of colour in the place, like a trunk, a tower, a figure or a pillar',
     kind: 'shape',
     gen: (c) => {
       const w = Math.max(14, c.box.w * c.rng.range(0.3, 0.6));
@@ -114,14 +114,31 @@ const MOTIF_LIST: Motif[] = [
   {
     id: 'blob',
     name: 'soft blob',
-    description: 'one irregular rounded shape',
+    description: 'one irregular rounded solid mass of colour',
     kind: 'shape',
     gen: (c) => [shape(blobPoints(c, 0.3, c.rng.int(7, 11)), true, 0.6)],
   },
   {
+    id: 'blob_cluster',
+    name: 'cluster of blobs',
+    description: 'two to four overlapping rounded masses of colour, like foliage, clouds or a bunch of something',
+    kind: 'shape',
+    gen: (c) => {
+      const n = c.rng.int(2, 4);
+      const ops: Op[] = [];
+      for (let i = 0; i < n; i++) {
+        const w = c.box.w * c.rng.range(0.45, 0.7);
+        const h = c.box.h * c.rng.range(0.45, 0.7);
+        const sub: MotifContext = { ...c, box: { x: c.box.x + c.rng.range(0, c.box.w - w), y: c.box.y + c.rng.range(0, c.box.h - h), w, h } };
+        ops.push(shape(blobPoints(sub, 0.25, c.rng.int(7, 10)), true, 0.6));
+      }
+      return ops;
+    },
+  },
+  {
     id: 'circle',
-    name: 'circle',
-    description: 'one round circle or disc',
+    name: 'disc',
+    description: 'one round solid disc, like a sun, a moon, a ball or a face',
     kind: 'shape',
     gen: (c) => {
       const r = Math.min(c.box.w, c.box.h) / 2;
@@ -129,9 +146,111 @@ const MOTIF_LIST: Motif[] = [
     },
   },
   {
+    id: 'oval',
+    name: 'tall oval',
+    description: 'one upright solid oval, taller than it is wide, like a head, an egg, a vase or a standing figure',
+    kind: 'shape',
+    gen: (c) => {
+      const w = Math.min(c.box.w, c.box.h * 0.72);
+      const h = Math.min(c.box.h, w / 0.72);
+      const sub: MotifContext = { ...c, box: { x: cx(c.box) - w / 2, y: cy(c.box) - h / 2, w, h } };
+      return [shape(blobPoints(sub, 0.08, 14), true, 0.8)];
+    },
+  },
+  {
+    id: 'wide_oval',
+    name: 'wide oval',
+    description: 'one solid oval lying on its side, wider than it is tall, like a pond, a cloud, a body at rest or a boat hull',
+    kind: 'shape',
+    gen: (c) => {
+      const h = Math.min(c.box.h, c.box.w * 0.55);
+      const w = Math.min(c.box.w, h / 0.55);
+      const sub: MotifContext = { ...c, box: { x: cx(c.box) - w / 2, y: cy(c.box) - h / 2, w, h } };
+      return [shape(blobPoints(sub, 0.08, 14), true, 0.8)];
+    },
+  },
+  {
+    id: 'mound',
+    name: 'mound',
+    description: 'one solid dome sitting on the bottom of its place, flat below and rounded above, like a hill, a dune, a shoulder or a bush',
+    kind: 'shape',
+    gen: (c) => {
+      const b = c.box;
+      const pts: Pt[] = [[b.x, b.y + b.h, 1]];
+      const n = 9;
+      for (let i = 0; i <= n; i++) {
+        const a = Math.PI - (i / n) * Math.PI;
+        const k = 1 + c.rng.range(-0.05, 0.05);
+        pts.push([cx(b) + (Math.cos(a) * b.w * k) / 2, b.y + b.h - Math.sin(a) * b.h * k, 1]);
+      }
+      pts.push([b.x + b.w, b.y + b.h, 1]);
+      return [shape(pts, true, 0.5)];
+    },
+  },
+  {
+    id: 'crescent',
+    name: 'crescent',
+    description: 'one solid crescent, a curved sliver like a moon, a smile, a sail or a leaf',
+    kind: 'shape',
+    gen: (c) => {
+      const b = c.box;
+      const R = Math.min(b.w, b.h) / 2;
+      const rot = c.rng.pick([0, Math.PI / 2, Math.PI, -Math.PI / 2, Math.PI / 4, -Math.PI / 4]);
+      const pts: Pt[] = [];
+      const n = 10;
+      const thickness = c.rng.range(0.35, 0.6);
+      for (let i = 0; i <= n; i++) {
+        const a = -Math.PI / 2 + (i / n) * Math.PI;
+        pts.push([Math.cos(a) * R, Math.sin(a) * R, 1]);
+      }
+      for (let i = n; i >= 0; i--) {
+        const a = -Math.PI / 2 + (i / n) * Math.PI;
+        pts.push([Math.cos(a) * R * (1 - thickness) + R * thickness * 0.6, Math.sin(a) * R, 1]);
+      }
+      const cxv = cx(b);
+      const cyv = cy(b);
+      return [shape(pts.map(([x, y]) => [cxv + x * Math.cos(rot) - y * Math.sin(rot), cyv + x * Math.sin(rot) + y * Math.cos(rot), 1]), true, 0.5)];
+    },
+  },
+  {
+    id: 'wedge',
+    name: 'wedge',
+    description: 'one solid slanted wedge or shard, like a roof, a rock face, a ray of light or a flag',
+    kind: 'shape',
+    gen: (c) => {
+      const b = c.box;
+      const flip = c.rng.chance(0.5);
+      const pts: Pt[] = flip
+        ? [[b.x, b.y + b.h * c.rng.range(0, 0.3), 1], [b.x + b.w, b.y + b.h * c.rng.range(0.4, 0.8), 1], [b.x + b.w, b.y + b.h, 1], [b.x, b.y + b.h, 1]]
+        : [[b.x, b.y + b.h * c.rng.range(0.4, 0.8), 1], [b.x + b.w, b.y + b.h * c.rng.range(0, 0.3), 1], [b.x + b.w, b.y + b.h, 1], [b.x, b.y + b.h, 1]];
+      return [shape(pts, true, 0)];
+    },
+  },
+  {
+    id: 'field',
+    name: 'full wash of the place',
+    description: 'a solid mass of colour covering the whole chosen place edge to edge, with soft uneven borders',
+    kind: 'shape',
+    gen: (c) => {
+      const b = c.region;
+      const j = () => c.rng.range(-0.03, 0.03) * Math.min(b.w, b.h);
+      const pts: Pt[] = [
+        [b.x - 4 + j(), b.y - 4 + j(), 1],
+        [b.x + b.w / 2, b.y - 4 + j(), 1],
+        [b.x + b.w + 4 + j(), b.y - 4 + j(), 1],
+        [b.x + b.w + 4 + j(), b.y + b.h / 2, 1],
+        [b.x + b.w + 4 + j(), b.y + b.h + 4 + j(), 1],
+        [b.x + b.w / 2, b.y + b.h + 4 + j(), 1],
+        [b.x - 4 + j(), b.y + b.h + 4 + j(), 1],
+        [b.x - 4 + j(), b.y + b.h / 2, 1],
+      ];
+      return [shape(pts, true, 0.15)];
+    },
+  },
+  {
     id: 'triangle',
     name: 'triangle',
-    description: 'one triangle, pointing up or down',
+    description: 'one solid triangle pointing up or down, like a mountain, a roof, a tree or a sail',
     kind: 'shape',
     gen: (c) => {
       const up = c.rng.chance(0.65);
@@ -146,7 +265,7 @@ const MOTIF_LIST: Motif[] = [
   {
     id: 'rectangle',
     name: 'rectangle',
-    description: 'one slightly crooked rectangle',
+    description: 'one solid slightly crooked rectangle, like a wall, a window, a door or a block of colour',
     kind: 'shape',
     gen: (c) => {
       const b = c.box;
@@ -163,7 +282,7 @@ const MOTIF_LIST: Motif[] = [
   {
     id: 'petals',
     name: 'petals',
-    description: 'several rounded shapes arranged around a centre, like a flower or a star',
+    description: 'several solid rounded shapes arranged around a centre, like a flower, a star or a burst',
     kind: 'shape',
     gen: (c) => {
       const n = c.rng.int(5, 8);
@@ -189,7 +308,7 @@ const MOTIF_LIST: Motif[] = [
   {
     id: 'stripes',
     name: 'stacked stripes',
-    description: 'several thin horizontal stripes stacked in the region',
+    description: 'several thin solid horizontal stripes stacked in the place',
     kind: 'shape',
     gen: (c) => {
       const n = c.rng.int(3, 6);
@@ -503,8 +622,10 @@ const MOTIF_LIST: Motif[] = [
 export const MOTIFS: MotifDef[] = MOTIF_LIST.map(({ id, name, description, kind }) => ({ id, name, description, kind }));
 export const MOTIF_BY_ID: Record<string, Motif> = Object.fromEntries(MOTIF_LIST.map((m) => [m.id, m]));
 
+export const KIND_WORD: Record<MotifKind, string> = { shape: 'solid shape', lines: 'lines' };
+
 export function motifChoiceCriteria(): Record<string, string> {
-  return Object.fromEntries(MOTIF_LIST.map((m) => [m.id, `${m.name}: ${m.description}`]));
+  return Object.fromEntries(MOTIF_LIST.map((m) => [m.id, `${m.name} (${KIND_WORD[m.kind]}): ${m.description}`]));
 }
 
 /** Runs a motif inside a region: picks where within the region the gesture goes, then generates its ops. */

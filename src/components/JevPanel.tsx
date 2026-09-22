@@ -84,7 +84,8 @@ export function Distribution({ question, probs, chosen, layoutId, paletteId }: {
 /** The decision as a sentence, so the judgment reads like a caption rather than a data row. */
 export function decisionSentence(record: StepRecord, layoutId: string, paletteId: string): string {
   const d = record.decision;
-  const how = d.modifier === 'stroke' ? 'as strokes' : d.modifier === 'fill_and_stroke' ? 'filled and outlined' : d.modifier === 'hatch' ? 'as hatching' : `as a ${d.modifier}`;
+  const isLines = MOTIF_BY_ID[d.motif]?.kind === 'lines';
+  const how = isLines || d.modifier === 'stroke' ? (isLines ? 'as strokes' : 'outline only') : d.modifier === 'fill_and_stroke' ? 'filled and outlined' : d.modifier === 'hatch' ? 'as hatching' : `as a ${d.modifier}`;
   const motif = label('motif', d.motif, layoutId, paletteId);
   const article = /^[aeiou]/i.test(d.size) ? 'An' : 'A';
   return `${article} ${d.size} ${motif} at the ${label('region', d.region, layoutId, paletteId)}: ${label('color', d.color, layoutId, paletteId)} ${d.brush} with ${d.weight} marks, ${how}.`;

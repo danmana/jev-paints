@@ -5,8 +5,8 @@
  */
 import { BRUSHES, FIELDS, MODIFIERS, SIZES, WEIGHTS } from './brushes';
 import { LAYOUT_BY_ID, layoutChoiceCriteria } from './layouts';
-import { MOTIF_BY_ID, motifChoiceCriteria } from './motifs';
-import { PALETTE_BY_ID, paletteChoiceCriteria } from './palettes';
+import { KIND_WORD, MOTIF_BY_ID, motifChoiceCriteria } from './motifs';
+import { describeColor, describePaper, PALETTE_BY_ID, paletteChoiceCriteria } from './palettes';
 import { planFor, regionChoiceCriteria, regionLabel } from './plan';
 import { STYLE_BY_ID, styleChoiceCriteria } from './styles';
 import type { StepRequest } from './types';
@@ -80,12 +80,12 @@ export function stepState(req: StepRequest) {
   const recent = req.history.slice(-12).map((h) => ({
     step: h.step,
     plan_phase: h.layer,
-    gesture: MOTIF_BY_ID[h.decision.motif]?.name ?? h.decision.motif,
+    gesture: `${MOTIF_BY_ID[h.decision.motif]?.name ?? h.decision.motif} (${KIND_WORD[MOTIF_BY_ID[h.decision.motif]?.kind ?? 'lines']})`,
     where: regionLabel(layout, h.decision.region),
     size: h.decision.size,
     medium: h.decision.brush,
     colour: palette.colors.find((c) => c.id === h.decision.color)?.name ?? h.decision.color,
-    applied_as: h.decision.modifier.replace('_', ' and '),
+    applied_as: MOTIF_BY_ID[h.decision.motif]?.kind === 'lines' ? 'plain strokes' : h.decision.modifier.replace('_and_', ' and '),
     weight: h.decision.weight,
   }));
   const earlier = req.history.slice(0, -12);
@@ -97,7 +97,8 @@ export function stepState(req: StepRequest) {
     request: req.prompt,
     canvas: CANVAS_DESCRIPTION,
     style: { name: style.name, looks_like: style.description },
-    palette: { name: palette.name, mood: palette.mood, paper: palette.paperName, colours: palette.colors.map((c) => c.name) },
+    palette: { name: palette.name, mood: palette.mood, paper: describePaper(palette), colours: palette.colors.map(describeColor) },
+    gesture_kinds: 'A gesture is either lines or a solid shape. Lines are always drawn as plain strokes in the chosen medium and colour. Solid shapes are painted with the chosen fill style.',
     stroke_character: FIELDS[req.setup.field],
     composition: {
       name: layout.name,
@@ -149,9 +150,13 @@ export function stepQuestions(req: StepRequest): Record<string, Question> {
     color: {
       type: 'choice',
       instructions: `${lead} Which colour from the palette is the next gesture?`,
-      criteria: Object.fromEntries(palette.colors.map((c) => [c.id, c.name])),
+      criteria: Object.fromEntries(palette.colors.map((c) => [c.id, `${describeColor(c)}, on ${describePaper(palette)} paper`])),
     },
-    modifier: { type: 'choice', instructions: `${lead} How is the paint applied for the next gesture?`, criteria: { ...MODIFIERS } },
+    modifier: {
+      type: 'choice',
+      instructions: `${lead} If the next gesture is a solid shape, how is it painted? (Line gestures are always plain strokes, whatever is chosen here.)`,
+      criteria: { ...MODIFIERS },
+    },
     weight: { type: 'choice', instructions: `${lead} How heavy are the marks of the next gesture?`, criteria: { ...WEIGHTS } },
     finished: {
       type: 'noul',
