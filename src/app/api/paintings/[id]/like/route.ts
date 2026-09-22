@@ -1,12 +1,14 @@
-import { likePainting } from '@/lib/store';
+import { setLike } from '@/lib/store';
+import { userFrom } from '@/lib/user.server';
 
-/** Body { liked: boolean }: true adds a like, false takes one back. No body counts as a like. */
+/** Body { liked: boolean }. The anonymous user id comes from the x-jev-user header; one like per user and painting. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const user = userFrom(req);
+  if (!user) return Response.json({ error: 'missing user id' }, { status: 400 });
   const body = (await req.json().catch(() => null)) as { liked?: boolean } | null;
   try {
-    const likes = await likePainting(id, body?.liked === false ? -1 : 1);
-    return Response.json({ likes });
+    return Response.json(await setLike(id, user, body?.liked !== false));
   } catch (err) {
     const e = err as { status?: number; message?: string };
     return Response.json({ error: e.message ?? 'failed' }, { status: e.status ?? 500 });

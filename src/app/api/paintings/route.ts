@@ -1,5 +1,6 @@
 import { checkCanvasImage } from '@/lib/images.server';
 import { verify } from '@/lib/sign.server';
+import { userFrom } from '@/lib/user.server';
 import { listPaintings, newId, savePainting } from '@/lib/store';
 import { MAX_STEPS, type Painting, type SaveRequest, type SetupPicks } from '@/lib/types';
 
@@ -49,6 +50,6 @@ export async function POST(request: Request) {
     totalMs: Math.max(0, Math.round(Number(body.totalMs) || 0)),
     totalTokens: setup.inputTokens + steps.reduce((a, s) => a + (s.inputTokens || 0), 0),
   };
-  const stored = await savePainting(painting, image);
+  const stored = await savePainting(painting, image, userFrom(request));
   return Response.json({ id: stored.id, image: stored.image ?? null });
 }

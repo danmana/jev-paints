@@ -11,13 +11,14 @@ import { blankGrid } from '@/lib/grid';
 import { PALETTE_BY_ID } from '@/lib/palettes';
 import { currentLayer } from '@/lib/plan';
 import type { Policy, SaveRequest, SetupResponse, StepRecord, StepRequest, StepResponse } from '@/lib/types';
+import { userHeaders } from '@/lib/user';
 
 type Phase = 'idle' | 'setup' | 'painting' | 'saving' | 'done' | 'blocked' | 'error';
 
 const EXAMPLES = ['a lighthouse in a storm', 'two cats asleep in the sun', 'the city at night from a rooftop', 'a quiet forest lake at dawn', 'my grandmother’s kitchen', 'a jazz band on fire'];
 
 async function post<T>(url: string, body: unknown): Promise<T> {
-  const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', ...userHeaders() }, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as { error?: string }).error ?? `${res.status} ${res.statusText}`);
   return data as T;

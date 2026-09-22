@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import LikeButton from '@/components/LikeButton';
+import LikedSync from '@/components/LikedSync';
 import ShareButton from '@/components/ShareButton';
 import { PALETTE_BY_ID } from '@/lib/palettes';
 import { listPaintings } from '@/lib/store';
@@ -21,6 +22,7 @@ export default async function GalleryPage() {
           The walls are bare. <Link href="/">Ask Jev to paint something.</Link>
         </p>
       )}
+      <LikedSync ids={paintings.map((p) => p.id)} />
       <div className="gallery">
         {paintings.map((p) => (
           <Link key={p.id} href={`/p/${p.id}`} className="tile">

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRef, useState } from 'react';
 import PaintingCanvas, { type CanvasHandle } from './PaintingCanvas';
 import LikeButton from './LikeButton';
+import LikedSync from './LikedSync';
 import ShareButton from './ShareButton';
 import { colorHex, Judgment, label, Provenance } from './JevPanel';
 import { buildGesture } from '@/lib/gesture';
@@ -40,6 +41,7 @@ export default function PaintingView({ painting }: { painting: Painting }) {
 
   return (
     <div className="studio">
+      <LikedSync ids={[painting.id]} />
       <figure className="easel">
         {showCanvas ? (
           <PaintingCanvas ref={canvas} className="canvas" />

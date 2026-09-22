@@ -31,4 +31,5 @@ export interface PaintingRow {
   image: string;
   thumb: string;
   json_url: string;
+  created_by: string | null;
 }

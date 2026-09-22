@@ -75,7 +75,7 @@ export async function uploadImages(id: string, images: EncodedImages): Promise<{
 // Public interface
 // ---------------------------------------------------------------------------------------------
 
-export async function savePainting(painting: Painting, imageBytes: Buffer): Promise<Painting> {
+export async function savePainting(painting: Painting, imageBytes: Buffer, createdBy: string | null): Promise<Painting> {
   safeId(painting.id);
   const images = await encodeImages(imageBytes);
   if (useCloud) {
@@ -94,6 +94,7 @@ export async function savePainting(painting: Painting, imageBytes: Buffer): Prom
       image: urls.image,
       thumb: urls.thumb,
       json_url: json.url,
+      created_by: createdBy,
     };
     const { error } = await db().from(TABLE).insert(row);
     if (error) throw new Error(`db insert failed: ${error.message}`);
@@ -161,20 +162,31 @@ export async function listPaintings(): Promise<PaintingSummary[]> {
   return out;
 }
 
-/** Atomic in Postgres; the local fallback just rewrites the file. */
-export async function likePainting(id: string, delta: 1 | -1 = 1): Promise<number> {
+/**
+ * Like or unlike as one anonymous user. Atomic in Postgres (one row per user and painting, then a
+ * recount); the local fallback only keeps the counter.
+ */
+export async function setLike(id: string, userId: string, liked: boolean): Promise<{ liked: boolean; likes: number }> {
   safeId(id);
   if (useCloud) {
-    const { data, error } = await db().rpc('bump_likes', { p_id: id, p_delta: delta });
+    const { data, error } = await db().rpc('set_like', { p_id: id, p_user: userId, p_liked: liked });
     if (error) throw new Error(`like failed: ${error.message}`);
-    if (data === null || data === undefined) throw Object.assign(new Error('not found'), { status: 404 });
-    return data as number;
+    const row = (data as Array<{ liked: boolean; likes: number }> | null)?.[0];
+    if (!row) throw Object.assign(new Error('not found'), { status: 404 });
+    return row;
   }
   const p = await loadPainting(id);
   if (!p) throw Object.assign(new Error('not found'), { status: 404 });
-  p.likes = Math.max(0, (p.likes ?? 0) + delta);
+  p.likes = Math.max(0, (p.likes ?? 0) + (liked ? 1 : -1));
   await writeFile(path.join(DIR, `${p.id}.json`), JSON.stringify(p, null, 2));
-  return p.likes;
+  return { liked, likes: p.likes };
+}
+
+/** Which of the given paintings this user has liked. Used to paint the hearts red on first render. */
+export async function likedBy(userId: string, ids: string[]): Promise<Set<string>> {
+  if (!useCloud || !ids.length) return new Set();
+  const { data } = await db().from('likes').select('painting_id').eq('user_id', userId).in('painting_id', ids).returns<Array<{ painting_id: string }>>();
+  return new Set((data ?? []).map((r) => r.painting_id));
 }
 
 export { del as deleteBlob };
