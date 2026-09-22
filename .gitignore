@@ -42,3 +42,4 @@ next-env.d.ts
 
 # local paintings until the DB exists
 /data/
+!.env.example
