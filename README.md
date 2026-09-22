@@ -20,9 +20,11 @@ cp .env.example .env.local        # add your TypeSafe key
 npm run dev                       # http://localhost:3000
 ```
 
-Paintings are one JSON (every decision Jev made) plus one PNG. With `BLOB_READ_WRITE_TOKEN` set they live in Vercel Blob, with a small `paintings/index.json` for the gallery; without it they are written to `data/paintings/` on disk. `scripts/migrate-to-blob.ts` uploads a local folder into the store.
+Paintings are one JSON (every decision Jev made) plus a full-size WebP and a 400 px thumbnail. With `BLOB_READ_WRITE_TOKEN` set they live in Vercel Blob, with a small `paintings/index.json` for the gallery; without it they are written to `data/paintings/` on disk.
 
-Deployed on Vercel: the app is stateless apart from Blob, so a fresh clone with the two env vars is the whole setup.
+The server owns every painting. Setup returns a signed session (id, seed, step count, picks); each step answer is signed too; saving verifies every signature and that the image is a real 1200×1200 WebP or PNG, so a painting can only contain what Jev returned through these routes. `PAINT_SIGNING_SECRET` is the HMAC key.
+
+Deployed on Vercel: the app is stateless apart from Blob, so a fresh clone with the three env vars is the whole setup.
 
 ## Layout
 

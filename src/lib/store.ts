@@ -2,6 +2,7 @@ import 'server-only';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { del, head, list, put } from '@vercel/blob';
+import { encodeImages, type EncodedImages } from './images.server';
 import type { Painting, PaintingSummary } from './types';
 
 /**
@@ -36,6 +37,7 @@ export function summarize(p: Painting): PaintingSummary {
     steps: p.steps.length,
     likes: p.likes ?? 0,
     ...(p.image ? { image: p.image } : {}),
+    ...(p.thumb ? { thumb: p.thumb } : {}),
   };
 }
 
@@ -72,28 +74,31 @@ async function upsertIndex(summary: PaintingSummary) {
   await putJson(INDEX, index);
 }
 
-export async function uploadImage(id: string, png: Buffer): Promise<string> {
-  const { url } = await put(`${PREFIX}${id}.png`, png, { access: 'public', addRandomSuffix: false, allowOverwrite: true, contentType: 'image/png', cacheControlMaxAge: 31536000 });
-  return url;
+const IMAGE_OPTS = { access: 'public' as const, addRandomSuffix: false, allowOverwrite: true, contentType: 'image/webp', cacheControlMaxAge: 31536000 };
+
+export async function uploadImages(id: string, images: EncodedImages): Promise<{ image: string; thumb: string }> {
+  const [full, thumb] = await Promise.all([put(`${PREFIX}${id}.webp`, images.full, IMAGE_OPTS), put(`${PREFIX}${id}-thumb.webp`, images.thumb, IMAGE_OPTS)]);
+  return { image: full.url, thumb: thumb.url };
 }
 
 // ---------------------------------------------------------------------------------------------
 // Public interface
 // ---------------------------------------------------------------------------------------------
 
-export async function savePainting(painting: Painting, pngBase64: string): Promise<Painting> {
+export async function savePainting(painting: Painting, png: Buffer): Promise<Painting> {
   safeId(painting.id);
-  const png = Buffer.from(pngBase64, 'base64');
+  const images = await encodeImages(png);
   if (useBlob) {
-    const image = await uploadImage(painting.id, png);
-    const stored: Painting = { ...painting, image };
+    const urls = await uploadImages(painting.id, images);
+    const stored: Painting = { ...painting, ...urls };
     await putJson(`${PREFIX}${painting.id}.json`, stored);
     await upsertIndex(summarize(stored));
     return stored;
   }
   await mkdir(DIR, { recursive: true });
   await writeFile(path.join(DIR, `${painting.id}.json`), JSON.stringify(painting, null, 2));
-  await writeFile(path.join(DIR, `${painting.id}.png`), png);
+  await writeFile(path.join(DIR, `${painting.id}.webp`), images.full);
+  await writeFile(path.join(DIR, `${painting.id}-thumb.webp`), images.thumb);
   return painting;
 }
 
@@ -108,22 +113,24 @@ export async function loadPainting(id: string): Promise<Painting | null> {
   }
 }
 
-/** Local PNG bytes, or the public URL when the painting lives in Blob. */
-export async function loadImage(id: string): Promise<{ png?: Buffer; url?: string } | null> {
+/** Local image bytes with their type, or the public URL when the painting lives in Blob. */
+export async function loadImage(id: string): Promise<{ bytes?: Buffer; contentType?: string; url?: string } | null> {
   safeId(id);
   if (useBlob) {
+    const p = await loadPainting(id);
+    return p?.image ? { url: p.image } : null;
+  }
+  for (const [ext, contentType] of [
+    ['webp', 'image/webp'],
+    ['png', 'image/png'],
+  ]) {
     try {
-      return { url: (await head(`${PREFIX}${id}.png`)).url };
-    } catch {
-      return null;
+      return { bytes: await readFile(path.join(DIR, `${id}.${ext}`)), contentType };
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
     }
   }
-  try {
-    return { png: await readFile(path.join(DIR, `${id}.png`)) };
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
-    throw err;
-  }
+  return null;
 }
 
 export async function listPaintings(): Promise<PaintingSummary[]> {

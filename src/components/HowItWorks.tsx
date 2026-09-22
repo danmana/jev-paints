@@ -207,7 +207,10 @@ export default function HowItWorks({ painting, counts }: { painting: Painting | 
   const layout = LAYOUT_BY_ID[painting.setup.layout];
   const setupQs = setupQuestions();
   const record = painting.steps.find((s) => s.step === anatomyStep) ?? painting.steps[0];
+  // Rebuilding the state Jev saw needs no live session; the signature fields are placeholders.
   const req: StepRequest = {
+    session: { id: 'example', seed: painting.settings.seed, prompt: painting.prompt, steps: painting.settings.steps, policy: painting.settings.policy },
+    setupSig: '',
     prompt: painting.prompt,
     setup: painting.setup,
     step: record.step,

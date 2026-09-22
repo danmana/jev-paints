@@ -197,7 +197,11 @@ const PaintingCanvas = forwardRef<CanvasHandle, Props>(function PaintingCanvas({
     },
     toDataURL() {
       const gl = pRef.current?.drawingContext as WebGL2RenderingContext | undefined;
-      return (gl?.canvas as HTMLCanvasElement | undefined)?.toDataURL('image/png') ?? '';
+      const el = gl?.canvas as HTMLCanvasElement | undefined;
+      if (!el) return '';
+      // WebP keeps the upload well under Vercel's request-body limit; browsers without WebP encoding return a PNG.
+      const webp = el.toDataURL('image/webp', 0.92);
+      return webp.startsWith('data:image/webp') ? webp : el.toDataURL('image/png');
     },
   }));
 

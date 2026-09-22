@@ -10,7 +10,7 @@ import { buildGesture } from '@/lib/gesture';
 import { blankGrid } from '@/lib/grid';
 import { PALETTE_BY_ID } from '@/lib/palettes';
 import { currentLayer } from '@/lib/plan';
-import type { Painting, Policy, SetupResponse, StepRecord, StepRequest, StepResponse } from '@/lib/types';
+import type { Policy, SaveRequest, SetupResponse, StepRecord, StepRequest, StepResponse } from '@/lib/types';
 
 type Phase = 'idle' | 'setup' | 'painting' | 'saving' | 'done' | 'blocked' | 'error';
 
@@ -67,10 +67,13 @@ export default function Painter() {
     // The question and controls are not needed while it paints: bring the canvas and its caption into view.
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     easel.current?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
-    const seed = Math.floor(Math.random() * 2 ** 31);
     let totalTokens = 0;
     try {
-      const s = await post<SetupResponse>('/api/setup', { prompt: text, policy });
+      const s = await post<SetupResponse>('/api/setup', { prompt: text, policy, steps });
+      // The server owns the session: its id, the seed and the step count are signed and come back with every request.
+      const { session, sig: setupSig } = s;
+      const seed = session.seed;
+      const picks = { palette: s.palette, style: s.style, layout: s.layout, field: s.field };
       totalTokens += s.inputTokens;
       setTokens(totalTokens);
       setSetup(s);
@@ -84,22 +87,21 @@ export default function Painter() {
 
       const history: StepRecord[] = [];
       let grid = blankGrid();
-      for (let step = 1; step <= steps; step++) {
+      for (let step = 1; step <= session.steps; step++) {
         if (stopRef.current) break;
         setCurrent(step);
-        const req: StepRequest = {
-          prompt: text,
-          setup: { palette: s.palette, style: s.style, layout: s.layout, field: s.field },
+        const req: Omit<StepRequest, 'prompt' | 'steps' | 'policy'> = {
+          session,
+          setup: picks,
+          setupSig,
           step,
-          steps,
-          policy,
           canvas: grid,
           history: history.map((h) => ({ step: h.step, layer: h.layer, decision: h.decision })),
         };
         const res = await post<StepResponse>('/api/step', req);
         totalTokens += res.inputTokens;
         setTokens(totalTokens);
-        const record: StepRecord = { step, layer: res.layer, decision: res.decision, probabilities: res.probabilities, finished: res.finished, ms: res.ms, inputTokens: res.inputTokens };
+        const record: StepRecord = { step, layer: res.layer, decision: res.decision, probabilities: res.probabilities, finished: res.finished, ms: res.ms, inputTokens: res.inputTokens, sig: res.sig };
         history.push(record);
         setRecords([...history]);
         const gesture = buildGesture(res.decision, s.layout, s.palette, s.field, seed, step);
@@ -112,15 +114,15 @@ export default function Painter() {
         return;
       }
       setPhase('saving');
-      const painting: Omit<Painting, 'id' | 'createdAt' | 'likes'> = {
-        prompt: text,
-        settings: { steps, policy, seed },
-        setup: { blocked: s.blocked, moderation: s.moderation, palette: s.palette, style: s.style, layout: s.layout, field: s.field, probabilities: s.probabilities, ms: s.ms, inputTokens: s.inputTokens },
+      const save: SaveRequest = {
+        session,
+        setup: { blocked: s.blocked, moderation: s.moderation, ...picks, probabilities: s.probabilities, ms: s.ms, inputTokens: s.inputTokens },
+        setupSig,
         steps: history,
         totalMs: Math.round(performance.now() - startedAt.current),
-        totalTokens,
+        image: canvas.current.toDataURL(),
       };
-      const saved = await post<{ id: string }>('/api/paintings', { painting, png: canvas.current.toDataURL() });
+      const saved = await post<{ id: string }>('/api/paintings', save);
       setSavedId(saved.id);
       setPlaceholder(EXAMPLES[(EXAMPLES.indexOf(placeholder) + 1) % EXAMPLES.length]);
       setPhase('done');

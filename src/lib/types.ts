@@ -97,7 +97,20 @@ export interface StepRecord {
   finished: number;
   ms: number;
   inputTokens: number;
+  /** Server signature over session id, step, layer and decision. Absent on paintings from before signing. */
+  sig?: string;
 }
+
+/** One painting in progress. Created by the server at setup and signed, so the browser cannot change it. */
+export interface Session {
+  id: string;
+  seed: number;
+  prompt: string;
+  steps: number;
+  policy: Policy;
+}
+
+export const MAX_STEPS = 100;
 
 export interface PaintingSettings {
   steps: number;
@@ -116,8 +129,10 @@ export interface Painting {
   totalMs: number;
   totalTokens: number;
   parentId?: string;
-  /** Where the PNG lives. Absent for paintings stored on the local disk. */
+  /** Full-size image URL. Absent for paintings stored on the local disk. */
   image?: string;
+  /** Small gallery image. Absent for local paintings and paintings saved before thumbnails existed. */
+  thumb?: string;
 }
 
 export interface PaintingSummary {
@@ -130,22 +145,34 @@ export interface PaintingSummary {
   steps: number;
   likes: number;
   image?: string;
+  thumb?: string;
 }
 
-/** The URL a page should use for a painting's PNG. */
+/** The URL a page should use for a painting's full-size image. */
 export function imageUrl(p: { id: string; image?: string }): string {
   return p.image ?? `/api/paintings/${p.id}/image`;
 }
 
+/** The URL for a gallery tile: the thumbnail when there is one. */
+export function thumbUrl(p: { id: string; image?: string; thumb?: string }): string {
+  return p.thumb ?? imageUrl(p);
+}
+
 /** What one step sends to the server. The server builds the Jev state from it. */
+export type SetupPicks = Pick<SetupResult, 'palette' | 'style' | 'layout' | 'field'>;
+
 export interface StepRequest {
-  prompt: string;
-  setup: Pick<SetupResult, 'palette' | 'style' | 'layout' | 'field'>;
+  session: Session;
+  setup: SetupPicks;
+  /** Signature the setup route issued over the session and the picks. */
+  setupSig: string;
   step: number;
-  steps: number;
-  policy: Policy;
   canvas: Record<string, string>;
   history: Array<Pick<StepRecord, 'step' | 'layer' | 'decision'>>;
+  /** Filled in by the server from the verified session. */
+  prompt: string;
+  steps: number;
+  policy: Policy;
 }
 
 export interface StepResponse {
@@ -155,11 +182,25 @@ export interface StepResponse {
   finished: number;
   ms: number;
   inputTokens: number;
+  sig: string;
   prompt: { state: unknown; questions: unknown };
 }
 
 export interface SetupResponse extends SetupResult {
+  session: Session;
+  sig: string;
   prompt: { state: unknown; questions: unknown };
+}
+
+/** What the browser sends to save a finished painting. Everything but the pixels is signed. */
+export interface SaveRequest {
+  session: Session;
+  setup: SetupResult;
+  setupSig: string;
+  steps: StepRecord[];
+  totalMs: number;
+  /** The canvas as a data URL, WebP preferred: PNG can push the request past Vercel's 4.5 MB body limit. */
+  image: string;
 }
 
 /** Drawing primitives the canvas executes. Coordinates are canvas pixels, origin top-left. */

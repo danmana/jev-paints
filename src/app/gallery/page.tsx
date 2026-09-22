@@ -5,7 +5,7 @@ import ShareButton from '@/components/ShareButton';
 import { PALETTE_BY_ID } from '@/lib/palettes';
 import { listPaintings } from '@/lib/store';
 import { STYLE_BY_ID } from '@/lib/styles';
-import { imageUrl } from '@/lib/types';
+import { thumbUrl } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +26,7 @@ export default async function GalleryPage() {
           <Link key={p.id} href={`/p/${p.id}`} className="tile">
             <div className="tile-image">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imageUrl(p)} alt={p.prompt} loading="lazy" />
+              <img src={thumbUrl(p)} alt={p.prompt} loading="lazy" width={400} height={400} />
               <LikeButton id={p.id} likes={p.likes} variant="overlay" />
               <ShareButton id={p.id} variant="overlay" />
             </div>

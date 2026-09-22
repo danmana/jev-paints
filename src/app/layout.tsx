@@ -10,7 +10,7 @@ const sans = Figtree({ variable: '--font-sans', subsets: ['latin'], weight: ['40
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://jev-paints.vercel.app';
 const DESCRIPTION = 'Tell Jev what to paint and watch it happen, one gesture at a time. A tiny AI that only answers questions with probabilities, turned into a painter.';
 /** The default preview: the painting the How it works page dissects. */
-const DEFAULT_IMAGE = 'https://jct43odyrpkvhc9l.public.blob.vercel-storage.com/paintings/20260922152557-i18ii.png';
+const DEFAULT_IMAGE = 'https://jct43odyrpkvhc9l.public.blob.vercel-storage.com/paintings/20260922152557-i18ii.webp';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
