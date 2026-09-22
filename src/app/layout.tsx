@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Cormorant_Garamond, Figtree } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 import Nav from '@/components/Nav';
 import './globals.css';
 
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </a>
           , painted by Jev.
         </footer>
+        <Analytics />
       </body>
     </html>
   );
