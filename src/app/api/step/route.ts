@@ -1,6 +1,7 @@
 import { askJev, choice, noul } from '@/lib/jev.server';
 import { currentLayer } from '@/lib/plan';
 import { pick } from '@/lib/policy';
+import { checkStep, RateLimited } from '@/lib/ratelimit.server';
 import { stepQuestions, stepState } from '@/lib/prompts';
 import { sign, verify } from '@/lib/sign.server';
 import { MAX_STEPS, type ModifierId, type SetupPicks, type SizeId, type StepRequest, type StepResponse, type WeightId } from '@/lib/types';
@@ -17,6 +18,12 @@ export async function POST(request: Request) {
   const step = Math.round(Number(body.step));
   const history = Array.isArray(body.history) ? body.history : [];
   if (step < 1 || step > Math.min(session.steps, MAX_STEPS) || step !== history.length + 1) return Response.json({ error: 'step out of sequence' }, { status: 400 });
+  try {
+    await checkStep(request);
+  } catch (err) {
+    if (err instanceof RateLimited) return Response.json({ error: err.message }, { status: 429 });
+    throw err;
+  }
 
   const req: StepRequest = {
     session,

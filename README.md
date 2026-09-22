@@ -24,6 +24,8 @@ Paintings are one JSON (every decision Jev made) plus a full-size WebP and a 400
 
 The server owns every painting. Setup returns a signed session (id, seed, step count, picks); each step answer is signed too; saving verifies every signature and that the image is a real 1200×1200 WebP or PNG, so a painting can only contain what Jev returned through these routes. `PAINT_SIGNING_SECRET` is the HMAC key.
 
+Rate limits live in the same database (`hit_rate_limit`): per IP 200 paintings started and 5,000 gestures per hour; site-wide 30,000 gestures per hour and 100,000 per day, which caps Jev spend at roughly $20 a day whatever happens. Likes and the gallery are never limited.
+
 Deployed on Vercel: the app is stateless apart from Blob, so a fresh clone with the env vars from `.env.example` is the whole setup.
 
 ## Layout

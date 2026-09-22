@@ -1,5 +1,6 @@
 import { askJev, choice, noul } from '@/lib/jev.server';
 import { pick } from '@/lib/policy';
+import { checkSetup, RateLimited } from '@/lib/ratelimit.server';
 import { setupQuestions, setupState } from '@/lib/prompts';
 import { newSeed, newSessionId, sign } from '@/lib/sign.server';
 import { MAX_STEPS, type FieldId, type Policy, type Session, type SetupPicks, type SetupResponse } from '@/lib/types';
@@ -13,6 +14,12 @@ export async function POST(request: Request) {
   if (!prompt || prompt.length > 300) return Response.json({ error: 'prompt must be 1 to 300 characters' }, { status: 400 });
   const policy: Policy = body?.policy === 'argmax' ? 'argmax' : 'sample';
   const steps = Math.min(MAX_STEPS, Math.max(10, Math.round(Number(body?.steps) || 50)));
+  try {
+    await checkSetup(request);
+  } catch (err) {
+    if (err instanceof RateLimited) return Response.json({ error: err.message }, { status: 429 });
+    throw err;
+  }
 
   const state = setupState(prompt);
   const questions = setupQuestions();
