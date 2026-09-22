@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import LikeButton from '@/components/LikeButton';
+import ShareButton from '@/components/ShareButton';
 import { PALETTE_BY_ID } from '@/lib/palettes';
 import { listPaintings } from '@/lib/store';
 import { STYLE_BY_ID } from '@/lib/styles';
@@ -23,6 +24,7 @@ export default async function GalleryPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={`/api/paintings/${p.id}/image`} alt={p.prompt} loading="lazy" />
               <LikeButton id={p.id} likes={p.likes} variant="overlay" />
+              <ShareButton id={p.id} prompt={p.prompt} variant="overlay" />
             </div>
             <div className="tile-text">
               <p className="tile-prompt">{p.prompt}</p>

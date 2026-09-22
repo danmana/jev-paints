@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import PaintingCanvas, { type CanvasHandle } from './PaintingCanvas';
 import { Judgment, Provenance } from './JevPanel';
+import LikeButton from './LikeButton';
+import ShareButton from './ShareButton';
 import { buildGesture } from '@/lib/gesture';
 import { blankGrid } from '@/lib/grid';
 import { PALETTE_BY_ID } from '@/lib/palettes';
@@ -219,6 +221,8 @@ export default function Painter() {
           )}
           {phase === 'done' && savedId && (
             <div className="actions">
+              <LikeButton id={savedId} likes={0} variant="button" />
+              <ShareButton id={savedId} prompt={painted} variant="button" />
               <Link className="button" href={`/p/${savedId}`}>
                 Open in the gallery
               </Link>
