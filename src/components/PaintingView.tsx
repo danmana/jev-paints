@@ -66,7 +66,7 @@ export default function PaintingView({ painting }: { painting: Painting }) {
           <div className="status">
             {replaying
               ? `Replaying gesture ${step} of ${painting.steps.length}.`
-              : `${painting.steps.length} gestures in ${Math.round((painting.totalMs ?? 0) / 100) / 10} seconds, about $${cost.toFixed(3)} of Jev. Painted ${when}, Jev ${painting.settings.policy === 'sample' ? 'drawing from his odds' : 'taking his top pick'}.`}
+              : `${painting.steps.length} gestures in ${Math.round((painting.totalMs ?? 0) / 100) / 10} seconds, about $${cost.toFixed(3)} of Jev. Painted ${when} with ${painting.settings.policy === 'sample' ? 'weighted picks' : 'top picks'}.`}
           </div>
           <div className="actions">
             <button className={`button ${liked ? 'liked' : ''}`} onClick={like} disabled={liked} aria-label="Like this painting">

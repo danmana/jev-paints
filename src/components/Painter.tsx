@@ -175,10 +175,10 @@ export default function Painter() {
           </label>
           <span className="setting toggle" role="group" aria-label="How Jev picks">
             <button type="button" className={policy === 'sample' ? 'on' : ''} onClick={() => setPolicy('sample')} disabled={busy}>
-              Jev draws from his odds
+              Weighted pick
             </button>
             <button type="button" className={policy === 'argmax' ? 'on' : ''} onClick={() => setPolicy('argmax')} disabled={busy}>
-              Jev takes his top pick
+              Top pick
             </button>
           </span>
           <label className="setting">
