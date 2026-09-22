@@ -48,26 +48,29 @@ async function thumb(url: string, size: number): Promise<string> {
   });
 }
 
+/** Two decimals: enough for the drawing, and identical on server and client so hydration matches. */
+const n2 = (v: number) => Math.round(v * 100) / 100;
+
 function opsToSvg(ops: Op[], stroke: string, width = 2): React.ReactNode[] {
   const out: React.ReactNode[] = [];
   ops.forEach((op, i) => {
     switch (op.t) {
       case 'line':
-        out.push(<line key={i} x1={op.x1} y1={op.y1} x2={op.x2} y2={op.y2} stroke={stroke} strokeWidth={width} strokeLinecap="round" />);
+        out.push(<line key={i} x1={n2(op.x1)} y1={n2(op.y1)} x2={n2(op.x2)} y2={n2(op.y2)} stroke={stroke} strokeWidth={width} strokeLinecap="round" />);
         break;
       case 'flow': {
         const a = (-op.dir * Math.PI) / 180;
-        out.push(<line key={i} x1={op.x} y1={op.y} x2={op.x + Math.cos(a) * op.len} y2={op.y + Math.sin(a) * op.len} stroke={stroke} strokeWidth={width} strokeLinecap="round" strokeDasharray="6 4" />);
+        out.push(<line key={i} x1={n2(op.x)} y1={n2(op.y)} x2={n2(op.x + Math.cos(a) * op.len)} y2={n2(op.y + Math.sin(a) * op.len)} stroke={stroke} strokeWidth={width} strokeLinecap="round" strokeDasharray="6 4" />);
         break;
       }
       case 'shape':
-        out.push(<polyline key={i} points={op.pts.map(([x, y]) => `${x},${y}`).join(' ') + (op.close ? ` ${op.pts[0][0]},${op.pts[0][1]}` : '')} fill={op.close ? stroke : 'none'} fillOpacity={op.close ? 0.18 : 0} stroke={stroke} strokeWidth={width} strokeLinejoin="round" />);
+        out.push(<polyline key={i} points={op.pts.map(([x, y]) => `${n2(x)},${n2(y)}`).join(' ') + (op.close ? ` ${n2(op.pts[0][0])},${n2(op.pts[0][1])}` : '')} fill={op.close ? stroke : 'none'} fillOpacity={op.close ? 0.18 : 0} stroke={stroke} strokeWidth={width} strokeLinejoin="round" />);
         break;
       case 'circle':
-        out.push(<circle key={i} cx={op.x} cy={op.y} r={op.r} fill={stroke} fillOpacity={0.18} stroke={stroke} strokeWidth={width} />);
+        out.push(<circle key={i} cx={n2(op.x)} cy={n2(op.y)} r={n2(op.r)} fill={stroke} fillOpacity={0.18} stroke={stroke} strokeWidth={width} />);
         break;
       case 'spline':
-        out.push(<polyline key={i} points={op.pts.map(([x, y]) => `${x},${y}`).join(' ')} fill="none" stroke={stroke} strokeWidth={width} strokeLinejoin="round" strokeLinecap="round" />);
+        out.push(<polyline key={i} points={op.pts.map(([x, y]) => `${n2(x)},${n2(y)}`).join(' ')} fill="none" stroke={stroke} strokeWidth={width} strokeLinejoin="round" strokeLinecap="round" />);
         break;
     }
   });
