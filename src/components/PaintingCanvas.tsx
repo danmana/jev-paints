@@ -67,7 +67,7 @@ const PaintingCanvas = forwardRef<CanvasHandle, Props>(function PaintingCanvas({
           brush.instance(p);
           brush.load();
           brush.scaleBrushes(1.2);
-          p.background('#f4f1ea');
+          p.background('#faf9f6');
           resolveReady.current();
           onReady?.();
         };

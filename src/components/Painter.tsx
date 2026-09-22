@@ -1,8 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import PaintingCanvas, { type CanvasHandle } from './PaintingCanvas';
-import { SetupCard, StepCard } from './JevPanel';
+import { Judgment, Provenance } from './JevPanel';
 import { buildGesture } from '@/lib/gesture';
 import { blankGrid } from '@/lib/grid';
 import { PALETTE_BY_ID } from '@/lib/palettes';
@@ -11,7 +12,7 @@ import type { Painting, Policy, SetupResponse, StepRecord, StepRequest, StepResp
 
 type Phase = 'idle' | 'setup' | 'painting' | 'saving' | 'done' | 'blocked' | 'error';
 
-const EXAMPLES = ['a lighthouse in a storm', 'two cats sleeping in the sun', 'the city at night from a rooftop', 'a quiet forest lake at dawn', 'my grandmother’s kitchen', 'a jazz band on fire'];
+const EXAMPLES = ['a lighthouse in a storm', 'two cats asleep in the sun', 'the city at night from a rooftop', 'a quiet forest lake at dawn', 'my grandmother’s kitchen', 'a jazz band on fire'];
 
 async function post<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -30,6 +31,7 @@ export default function Painter() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [error, setError] = useState<string | null>(null);
   const [setup, setSetup] = useState<SetupResponse | null>(null);
+  const [painted, setPainted] = useState<string>('');
   const [records, setRecords] = useState<StepRecord[]>([]);
   const [current, setCurrent] = useState(0);
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -52,6 +54,7 @@ export default function Painter() {
     setSavedId(null);
     setRecords([]);
     setSetup(null);
+    setPainted(text);
     setCurrent(0);
     setTokens(0);
     startedAt.current = performance.now();
@@ -88,15 +91,7 @@ export default function Painter() {
         const res = await post<StepResponse>('/api/step', req);
         totalTokens += res.inputTokens;
         setTokens(totalTokens);
-        const record: StepRecord = {
-          step,
-          layer: res.layer,
-          decision: res.decision,
-          probabilities: res.probabilities,
-          finished: res.finished,
-          ms: res.ms,
-          inputTokens: res.inputTokens,
-        };
+        const record: StepRecord = { step, layer: res.layer, decision: res.decision, probabilities: res.probabilities, finished: res.finished, ms: res.ms, inputTokens: res.inputTokens };
         history.push(record);
         setRecords([...history]);
         const gesture = buildGesture(res.decision, s.layout, s.palette, s.field, seed, step);
@@ -112,17 +107,7 @@ export default function Painter() {
       const painting: Omit<Painting, 'id' | 'createdAt' | 'likes'> = {
         prompt: text,
         settings: { steps, policy, seed },
-        setup: {
-          blocked: s.blocked,
-          moderation: s.moderation,
-          palette: s.palette,
-          style: s.style,
-          layout: s.layout,
-          field: s.field,
-          probabilities: s.probabilities,
-          ms: s.ms,
-          inputTokens: s.inputTokens,
-        },
+        setup: { blocked: s.blocked, moderation: s.moderation, palette: s.palette, style: s.style, layout: s.layout, field: s.field, probabilities: s.probabilities, ms: s.ms, inputTokens: s.inputTokens },
         steps: history,
         totalMs: Math.round(performance.now() - startedAt.current),
         totalTokens,
@@ -142,92 +127,92 @@ export default function Painter() {
   const layer = setup && current ? currentLayer(setup.layout, steps, current).layer : null;
   const latest = records[records.length - 1];
 
-  return (
-    <div className="painter">
-      <div className="canvas-col">
-        <PaintingCanvas ref={canvas} className="canvas" />
-        <div className="under-canvas">
-          {busy && (
-            <div className="progress">
-              <div className="progress-bar" style={{ width: `${(current / steps) * 100}%` }} />
-            </div>
-          )}
-          <div className="status muted">
-            {phase === 'idle' && 'Tell Jev what to paint.'}
-            {phase === 'setup' && 'Jev is choosing a palette, a style and a composition…'}
-            {phase === 'painting' && `Step ${current} of ${steps} · ${layer} · ${elapsed}s`}
-            {phase === 'saving' && 'Saving to the gallery…'}
-            {phase === 'done' && `Done in ${elapsed}s · ${records.length} gestures · ${tokens.toLocaleString()} tokens ≈ $${cost.toFixed(4)}`}
-            {phase === 'blocked' && 'Jev would rather not paint that one.'}
-            {phase === 'error' && `Something broke: ${error}`}
-          </div>
-          {phase === 'done' && savedId && (
-            <div className="actions">
-              <a className="button" href={`/p/${savedId}`}>
-                Open in gallery
-              </a>
-              <button className="button ghost" onClick={() => setPhase('idle')}>
-                Paint another
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+  const status = (() => {
+    switch (phase) {
+      case 'idle':
+        return 'Nothing on the paper yet.';
+      case 'setup':
+        return 'Jev is choosing a palette, a style and a composition.';
+      case 'painting':
+        return `Gesture ${current} of ${steps}, painting the ${layer}. ${elapsed} seconds so far.`;
+      case 'saving':
+        return 'Saving to the gallery.';
+      case 'done':
+        return `Finished in ${elapsed} seconds with ${records.length} gestures, about $${cost.toFixed(3)} of Jev.`;
+      case 'blocked':
+        return 'Jev would rather not paint that one. Try a different subject.';
+      case 'error':
+        return `The painting stopped: ${error}. Try again.`;
+    }
+  })();
 
-      <div className="side-col">
+  return (
+    <div className="studio">
+      <section className="ask">
+        <h1 className="question">What should Jev paint?</h1>
         <form
-          className="card form"
+          className="prompt-line"
           onSubmit={(e) => {
             e.preventDefault();
             if (!busy) void run();
           }}
         >
-          <label className="field">
-            <span className="label">What should Jev paint?</span>
-            <input value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={300} placeholder={placeholder} disabled={busy} autoFocus />
-          </label>
-          <label className="field inline">
-            <span className="label">Gestures: {steps}</span>
-            <input type="range" min={10} max={100} step={1} value={steps} onChange={(e) => setSteps(Number(e.target.value))} disabled={busy} />
-          </label>
-          <div className="field inline">
-            <span className="label">Jev picks by</span>
-            <span className="segmented">
-              <button type="button" className={policy === 'sample' ? 'on' : ''} onClick={() => setPolicy('sample')} disabled={busy}>
-                drawing from his odds
-              </button>
-              <button type="button" className={policy === 'argmax' ? 'on' : ''} onClick={() => setPolicy('argmax')} disabled={busy}>
-                his top pick
-              </button>
-            </span>
-          </div>
-          <label className="field inline">
-            <span className="label">Stroke pace: {animMs} ms</span>
-            <input type="range" min={0} max={800} step={50} value={animMs} onChange={(e) => setAnimMs(Number(e.target.value))} />
-          </label>
-          <div className="actions">
-            {!busy ? (
-              <button className="button primary" type="submit" disabled={!prompt.trim()}>
-                Paint
-              </button>
-            ) : (
-              <button className="button" type="button" onClick={() => (stopRef.current = true)} disabled={phase !== 'painting'}>
-                Stop here and save
-              </button>
-            )}
-          </div>
+          <input value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={300} placeholder={placeholder} disabled={busy} autoFocus aria-label="What should Jev paint?" />
+          {!busy ? (
+            <button className="button primary" type="submit" disabled={!prompt.trim()}>
+              Paint
+            </button>
+          ) : (
+            <button className="button" type="button" onClick={() => (stopRef.current = true)} disabled={phase !== 'painting'}>
+              Stop and keep it
+            </button>
+          )}
         </form>
+        <div className="settings">
+          <label className="setting">
+            <span>{steps} gestures</span>
+            <input type="range" min={10} max={100} step={1} value={steps} onChange={(e) => setSteps(Number(e.target.value))} disabled={busy} aria-label="Number of gestures" />
+          </label>
+          <span className="setting toggle" role="group" aria-label="How Jev picks">
+            <button type="button" className={policy === 'sample' ? 'on' : ''} onClick={() => setPolicy('sample')} disabled={busy}>
+              Jev draws from his odds
+            </button>
+            <button type="button" className={policy === 'argmax' ? 'on' : ''} onClick={() => setPolicy('argmax')} disabled={busy}>
+              Jev takes his top pick
+            </button>
+          </span>
+          <label className="setting">
+            <span>{animMs === 0 ? 'instant strokes' : `${animMs} ms per gesture`}</span>
+            <input type="range" min={0} max={800} step={50} value={animMs} onChange={(e) => setAnimMs(Number(e.target.value))} aria-label="Stroke pace" />
+          </label>
+        </div>
+      </section>
 
-        {setup && !setup.blocked && <SetupCard setup={setup} />}
-        {setup?.blocked && (
-          <div className="card">
-            <div className="muted">
-              Moderation: sexual {Math.round(setup.moderation.sexual * 100)}% · hateful {Math.round(setup.moderation.hate * 100)}% · gore {Math.round(setup.moderation.gore * 100)}%
+      <figure className="easel">
+        <PaintingCanvas ref={canvas} className="canvas" />
+        <figcaption className="caption">
+          <p className="work">{painted ? painted : <span className="quiet">Untitled, not yet begun</span>}</p>
+          {setup && !setup.blocked && <Provenance setup={setup} />}
+          <div className="status">{status}</div>
+          {busy && (
+            <div className="progress" aria-hidden="true">
+              <div className="progress-bar" style={{ width: `${(current / steps) * 100}%` }} />
             </div>
-          </div>
-        )}
-        {latest && setup && <StepCard record={latest} layoutId={setup.layout} paletteId={setup.palette} />}
-      </div>
+          )}
+          {phase === 'done' && savedId && (
+            <div className="actions">
+              <Link className="button" href={`/p/${savedId}`}>
+                Open in the gallery
+              </Link>
+              <button className="button quiet" onClick={() => setPhase('idle')}>
+                Paint another
+              </button>
+            </div>
+          )}
+        </figcaption>
+      </figure>
+
+      {latest && setup && <Judgment record={latest} layoutId={setup.layout} paletteId={setup.palette} total={steps} />}
     </div>
   );
 }

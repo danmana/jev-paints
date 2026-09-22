@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Cormorant_Garamond, Figtree } from 'next/font/google';
 import './globals.css';
 
-const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
-const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
+const serif = Cormorant_Garamond({ variable: '--font-serif', subsets: ['latin'], weight: ['300', '400', '500'], style: ['normal', 'italic'] });
+const sans = Figtree({ variable: '--font-sans', subsets: ['latin'], weight: ['400', '500'] });
 
 export const metadata: Metadata = {
   title: 'Jev Paints',
@@ -13,17 +13,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${serif.variable} ${sans.variable}`}>
       <body>
+        <div className="wash" aria-hidden="true" />
         <header className="top">
           <Link href="/" className="brand">
-            Jev <em>Paints</em>
+            Jev Paints
           </Link>
           <nav>
             <Link href="/gallery">Gallery</Link>
             <Link href="/how-it-works">How it works</Link>
             <a href="https://typesafe.ai" target="_blank" rel="noreferrer">
-              Jev by TypeSafe
+              Jev, by TypeSafe
             </a>
           </nav>
         </header>

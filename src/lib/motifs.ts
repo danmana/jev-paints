@@ -421,7 +421,7 @@ const MOTIF_LIST: Motif[] = [
   },
   {
     id: 'long_curve',
-    name: 'one long curve',
+    name: 'long curve',
     description: 'a single sweeping S-shaped stroke across the region',
     kind: 'lines',
     gen: (c) => {
