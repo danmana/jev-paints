@@ -23,6 +23,7 @@ async function post<T>(url: string, body: unknown): Promise<T> {
 
 export default function Painter() {
   const canvas = useRef<CanvasHandle>(null);
+  const input = useRef<HTMLInputElement>(null);
   const stopRef = useRef(false);
   const [prompt, setPrompt] = useState('');
   const [steps, setSteps] = useState(30);
@@ -122,6 +123,18 @@ export default function Painter() {
     }
   }, [prompt, steps, policy, animMs, placeholder]);
 
+  const startOver = async () => {
+    setPhase('idle');
+    setPrompt('');
+    setPainted('');
+    setSetup(null);
+    setRecords([]);
+    setSavedId(null);
+    setCurrent(0);
+    await canvas.current?.reset('#faf9f6', 0);
+    input.current?.focus();
+  };
+
   const busy = phase === 'setup' || phase === 'painting' || phase === 'saving';
   const cost = (tokens * 0.042) / 1_000_000;
   const layer = setup && current ? currentLayer(setup.layout, steps, current).layer : null;
@@ -157,7 +170,7 @@ export default function Painter() {
             if (!busy) void run();
           }}
         >
-          <input value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={300} placeholder={placeholder} disabled={busy} autoFocus aria-label="What should Jev paint?" />
+          <input ref={input} value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={300} placeholder={placeholder} disabled={busy} autoFocus aria-label="What should Jev paint?" />
           {!busy ? (
             <button className="button primary" type="submit" disabled={!prompt.trim()}>
               Paint
@@ -204,7 +217,7 @@ export default function Painter() {
               <Link className="button" href={`/p/${savedId}`}>
                 Open in the gallery
               </Link>
-              <button className="button quiet" onClick={() => setPhase('idle')}>
+              <button className="button quiet" onClick={() => void startOver()}>
                 Paint another
               </button>
             </div>
