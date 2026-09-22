@@ -24,6 +24,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Nav />
         </header>
         {children}
+        <footer className="foot">
+          Made by{' '}
+          <a href="https://x.com/danmana" target="_blank" rel="noreferrer">
+            @danmana
+          </a>
+          , painted by Jev.
+        </footer>
       </body>
     </html>
   );

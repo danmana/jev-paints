@@ -97,6 +97,24 @@ a {
   color: #5e4f8f;
 }
 
+/* Footer */
+.foot {
+  text-align: center;
+  padding: 0 24px 40px;
+  margin-top: -60px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.foot a {
+  color: var(--ink-2);
+  text-decoration: none;
+  border-bottom: 1px solid var(--ink-3);
+}
+.foot a:hover {
+  color: var(--violet);
+  border-bottom-color: var(--violet);
+}
+
 /* Page frame */
 .page {
   max-width: 1040px;
