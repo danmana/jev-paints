@@ -24,6 +24,7 @@ async function post<T>(url: string, body: unknown): Promise<T> {
 export default function Painter() {
   const canvas = useRef<CanvasHandle>(null);
   const input = useRef<HTMLInputElement>(null);
+  const easel = useRef<HTMLElement>(null);
   const stopRef = useRef(false);
   const [prompt, setPrompt] = useState('');
   const [steps, setSteps] = useState(50);
@@ -60,6 +61,9 @@ export default function Painter() {
     setTokens(0);
     startedAt.current = performance.now();
     setPhase('setup');
+    // The question and controls are not needed while it paints: bring the canvas and its caption into view.
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    easel.current?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
     const seed = Math.floor(Math.random() * 2 ** 31);
     let totalTokens = 0;
     try {
@@ -201,7 +205,7 @@ export default function Painter() {
         </div>
       </section>
 
-      <figure className="easel">
+      <figure className="easel" ref={easel}>
         <PaintingCanvas ref={canvas} className="canvas" />
         <figcaption className="caption">
           <p className="work">{painted ? painted : <span className="quiet">Untitled, not yet begun</span>}</p>

@@ -266,11 +266,13 @@ a {
   align-items: center;
   gap: 26px;
   width: 100%;
+  scroll-margin-top: 20px;
 }
+/* Canvas plus caption always fit one viewport once the easel is scrolled to the top. */
 .canvas {
   display: block;
   width: 100%;
-  max-width: 600px;
+  max-width: min(600px, calc(100vh - 250px));
   aspect-ratio: 1 / 1;
   background: #fff;
   box-shadow:
