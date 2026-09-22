@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Cormorant_Garamond, Figtree } from 'next/font/google';
+import Nav from '@/components/Nav';
 import './globals.css';
 
 const serif = Cormorant_Garamond({ variable: '--font-serif', subsets: ['latin'], weight: ['300', '400', '500'], style: ['normal', 'italic'] });
@@ -20,13 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Link href="/" className="brand">
             Jev Paints
           </Link>
-          <nav>
-            <Link href="/gallery">Gallery</Link>
-            <Link href="/how-it-works">How it works</Link>
-            <a href="https://typesafe.ai" target="_blank" rel="noreferrer">
-              Jev, by TypeSafe
-            </a>
-          </nav>
+          <Nav />
         </header>
         {children}
       </body>

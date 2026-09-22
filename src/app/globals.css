@@ -88,6 +88,14 @@ a {
 .top nav a:hover {
   color: var(--ink);
 }
+.top nav .nav-paint {
+  color: var(--violet);
+  border-bottom: 1px solid var(--violet);
+  padding-bottom: 1px;
+}
+.top nav .nav-paint:hover {
+  color: #5e4f8f;
+}
 
 /* Page frame */
 .page {
