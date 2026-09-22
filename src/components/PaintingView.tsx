@@ -57,7 +57,7 @@ export default function PaintingView({ painting }: { painting: Painting }) {
           </div>
           <div className="actions">
             <LikeButton id={painting.id} likes={painting.likes ?? 0} variant="button" />
-            <ShareButton id={painting.id} prompt={painting.prompt} variant="button" />
+            <ShareButton id={painting.id} variant="button" />
             <button className="button" onClick={replay} disabled={replaying}>
               Watch it again
             </button>

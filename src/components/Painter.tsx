@@ -222,7 +222,7 @@ export default function Painter() {
           {phase === 'done' && savedId && (
             <div className="actions">
               <LikeButton id={savedId} likes={0} variant="button" />
-              <ShareButton id={savedId} prompt={painted} variant="button" />
+              <ShareButton id={savedId} variant="button" />
               <Link className="button" href={`/p/${savedId}`}>
                 Open in the gallery
               </Link>

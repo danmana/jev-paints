@@ -4,13 +4,12 @@ import { useEffect, useRef, useState, type MouseEvent } from 'react';
 
 interface Props {
   id: string;
-  prompt: string;
   /** overlay: white icon on top of an image. button: the pill next to the like button. */
   variant: 'overlay' | 'button';
 }
 
-/** Shares the painting's page: the system share sheet where there is one, otherwise the link is copied. */
-export default function ShareButton({ id, prompt, variant }: Props) {
+/** Copies the painting's link. No system share sheet: a copied link works the same everywhere. */
+export default function ShareButton({ id, variant }: Props) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -22,16 +21,6 @@ export default function ShareButton({ id, prompt, variant }: Props) {
     e.preventDefault();
     e.stopPropagation();
     const url = `${window.location.origin}/p/${id}`;
-    const title = `Jev painted “${prompt}”`;
-    if (typeof navigator.share === 'function') {
-      try {
-        await navigator.share({ title, text: title, url });
-        return;
-      } catch (err) {
-        if ((err as Error).name === 'AbortError') return;
-        // fall through to the clipboard
-      }
-    }
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -43,13 +32,12 @@ export default function ShareButton({ id, prompt, variant }: Props) {
   };
 
   return (
-    <button type="button" className={`share ${variant} ${copied ? 'copied' : ''}`} onClick={share} aria-label="Share this painting">
+    <button type="button" className={`share ${variant} ${copied ? 'copied' : ''}`} onClick={share} aria-label="Copy a link to this painting">
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 3v12" />
-        <path d="M7.5 7.5 12 3l4.5 4.5" />
-        <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+        <path d="M10 14a4 4 0 0 1 0-5.7l2.3-2.3a4 4 0 0 1 5.7 5.7l-1.1 1.1" />
+        <path d="M14 10a4 4 0 0 1 0 5.7l-2.3 2.3a4 4 0 0 1-5.7-5.7l1.1-1.1" />
       </svg>
-      {variant === 'button' && <span>{copied ? 'Link copied' : 'Share'}</span>}
+      {variant === 'button' && <span>{copied ? 'Link copied' : 'Copy link'}</span>}
       {variant === 'overlay' && copied && <span className="share-toast">Link copied</span>}
     </button>
   );

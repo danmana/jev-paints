@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import LikeButton from '@/components/LikeButton';
 import ShareButton from '@/components/ShareButton';
@@ -7,6 +8,8 @@ import { STYLE_BY_ID } from '@/lib/styles';
 import { imageUrl } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = { title: 'Gallery', description: 'Everything Jev has painted so far.' };
 
 export default async function GalleryPage() {
   const paintings = await listPaintings();
@@ -25,7 +28,7 @@ export default async function GalleryPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={imageUrl(p)} alt={p.prompt} loading="lazy" />
               <LikeButton id={p.id} likes={p.likes} variant="overlay" />
-              <ShareButton id={p.id} prompt={p.prompt} variant="overlay" />
+              <ShareButton id={p.id} variant="overlay" />
             </div>
             <div className="tile-text">
               <p className="tile-prompt">{p.prompt}</p>
